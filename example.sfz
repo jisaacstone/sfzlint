@@ -1,0 +1,104 @@
+/*  1958 Otto Rubner double bass played and mapped by D. Smolken.
+ *  Mapping for all sounds with key switches for arco (MIDI key 70), pizz (71) and various noises (72).
+ *  Everything from the lowest sampled note to the switches fits on a 49-key MIDI controller.
+ *  Fifths tuning (CGDA), F.G. Pfretzchner German bow with black hair, Thomastik-Infeld Spirocore strings, Pops' rosin.
+ *  Sampled notes range from C1 through A4 for arco, C1 through A3 for pizz.
+ *  Copyright 2013 D. Smolken.
+ *  Royalty-free for all commercial and non-commercial use. */
+#define $pitch_keycenter 24
+#include "another/file.sfz"
+
+<global>
+sw_default=70 // test comment
+
+<group>sw_lokey=70 sw_hikey=72
+sw_last=70
+bend_up=1200
+bend_down=-1200
+ampeg_release=0.800
+
+<region>
+sample=arco\arco_c1_pp_down.wav
+lokey=12 hikey=24 hivel=15
+seq_length=2
+pitch_keycenter=$pitch_keycenter
+amp_velcurve_15=1
+
+<region>
+sample=arco\arco_c1_pp_up.wav lokey=12 hikey=24
+hivel=15
+seq_length=2
+seq_position=2
+pitch_keycenter=$pitch_keycenter
+amp_velcurve_15=1
+
+<region>
+sample=arco\arco_c1_p_down.wav
+lokey=12
+hikey=24
+lovel=16
+hivel=59
+seq_length=2
+pitch_keycenter=$pitch_keycenter
+amp_velcurve_59=1
+
+<region>
+sample=arco\arco_c1_p_up.wav
+lokey=12
+hikey=24
+lovel=16
+hivel=59
+seq_length=2
+seq_position=2
+pitch_keycenter=$pitch_keycenter
+amp_velcurve_59=1
+
+<region>
+sample=arco\arco_c1_mf_down.wav
+lokey=12
+hikey=24
+lovel=60
+hivel=102
+seq_length=2
+pitch_keycenter=$pitch_keycenter
+amp_velcurve_102=1
+
+<region>
+sample=arco\arco_c1_mf_up.wav
+lokey=12
+hikey=24
+lovel=60
+hivel=102
+seq_length=2
+seq_position=2
+pitch_keycenter=$pitch_keycenter
+amp_velcurve_102=1
+
+<region>
+sample=arco\arco_c1_f_down.wav
+lokey=12
+hikey=24
+lovel=103
+hivel=124
+seq_length=2
+pitch_keycenter=$pitch_keycenter
+amp_velcurve_124=1
+
+<region>
+sample=arco\arco_c1_f_up.wav
+lokey=12
+hikey=24
+lovel=103
+hivel=124
+seq_length=2
+seq_position=2
+pitch_keycenter=$pitch_keycenter
+amp_velcurve_124=1
+
+<region>
+sample=arco\arco_c1_ff_down.wav
+lokey=12
+hikey=24
+lovel=125
+seq_length=2
+pitch_keycenter=$pitch_keycenter
