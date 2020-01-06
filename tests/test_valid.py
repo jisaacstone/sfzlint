@@ -2,14 +2,26 @@
 
 from unittest import TestCase
 from sfzlint import parser
-from inspect import cleandoc as cd
+from inspect import cleandoc
 
 
 class TestValid(TestCase):
+    def assertEqual(self, aa, bb, *args, **kwargs):
+        # handle tokens transparently
+        if hasattr(aa, 'value'):
+            aa = aa.value
+        if hasattr(bb, 'value'):
+            bb = bb.value
+        return super(TestValid, self).assertEqual(aa, bb, *args, **kwargs)
+
     def _parse(self, docstring):
-        sfz, errors, warnings = parser.validate_s(cd(docstring))
-        self.assertFalse(errors)
-        self.assertFalse(warnings)
+        errs = []
+
+        def err_cb(*args):
+            errs.append(args)
+
+        sfz = parser.validate_s(cleandoc(docstring), err_cb=err_cb)
+        self.assertFalse(errs)
         return sfz
 
     def test_include(self):
@@ -42,3 +54,19 @@ class TestValid(TestCase):
         (k, v), = tuple(region.items())
         self.assertEqual('sample', k)
         self.assertEqual('example.wav', v)
+
+    def test_var_types(self):
+        sfz = self._parse(
+            '''
+            <group>
+            ampeg_sustain=100
+            ampeg_release=0.3
+            <region>
+            sample=c1.wav
+            key=c1
+            ''')
+        group, region = sfz.headers
+        self.assertEqual(group['ampeg_sustain'], 100)
+        self.assertEqual(group['ampeg_release'], 0.3)
+        self.assertEqual(region['sample'], 'c1.wav')
+        self.assertEqual(region['key'], 'c1')

@@ -13,7 +13,7 @@ setup(
     test_suite='tests',
     entry_points={
         'console_scripts': [
-            'sfzlint = sfzlint.linter:main',
+            'sfzlint = sfzlint.lint:main',
         ]
     },
     install_requires=[

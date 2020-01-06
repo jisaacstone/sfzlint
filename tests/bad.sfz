@@ -1,0 +1,9 @@
+sw_default=46
+
+<global>
+foo=bar
+
+<region>
+sample=45
+delay=20000
+end=2.5

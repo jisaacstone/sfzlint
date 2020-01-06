@@ -38,7 +38,7 @@ class Range(Validator):
 
     def validate(self, value):
         if not self.low <= value <= self.high:
-            return f'{value} not in range {self.low} to {self.high}',
+            return f'{value} not in range {self.low} to {self.high}'
 
 
 def Choice(Validator):
@@ -87,7 +87,7 @@ class OpcodeIntRepl:
         return pre + sub
 
 
-def validate_opcode_expr(raw_opcode, raw_value, s_value):
+def validate_opcode_expr(raw_opcode, token):
     if raw_opcode not in opcodes:
         opcode = re.sub(
             OpcodeIntRepl.re,
@@ -100,16 +100,17 @@ def validate_opcode_expr(raw_opcode, raw_value, s_value):
         validation = opcodes[opcode]
     except KeyError:
         raise ValidationWarning(
-            f'{opcode} is an unknown opcode',
+            f'unknown opcode ({opcode})',
             raw_opcode)
     v_type = validation.get('type')
-    if v_type and not isinstance(s_value, v_type):
+    if v_type and not isinstance(token.value, v_type):
         raise ValidationError(
-            f'expected {typenames[v_type]} got {s_value}',
-            raw_value)
-    err_msg = validation['validator'].validate(s_value)
+            f'expected {typenames[v_type]} got {token.value} ({opcode})',
+            token)
+    err_msg = validation['validator'].validate(token.value)
     if err_msg:
-        raise ValidationWarning(err_msg, raw_value)
+        msg = f'{err_msg} ({opcode})'
+        raise ValidationWarning(msg, token)
 
 
 typenames = {
