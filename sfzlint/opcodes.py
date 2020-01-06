@@ -47,7 +47,7 @@ def Choice(Validator):
 
     def validate(self, value):
         if value not in self.choices:
-            subbed = re.sub(OpcodeIntRepl.re, OpcodeIntRepl(value), value)
+            subbed = OpcodeIntRepl.sub(value)
             if subbed not in self.choices:
                 return f'{value} not one of {self.choices}',
 
@@ -55,15 +55,19 @@ def Choice(Validator):
 class OpcodeIntRepl:
     '''Converts opcodes with numeric components to their index form, and validates
 
-    for example: 'eq3_bwcc25' -> 'eqN_bwccX'
+    for example: OpcodeIntRepl.sub('eq3_bwcc25') -> 'eqN_bwccX'
     validates control codes in cc range.
-    for example: 'eq3_bwcc256' -> ValidationError
+    for example: OpcodeIntRepl.sub('eq3_bwcc256') -> ValidationError
     '''
 
     subs = ['N', 'X', 'Y']
     re = r'([a-z]*)(\d+)'
     # Some opcodes have numbers in the name, we ignore
     ignore = {'vel2', 'cutoff2', 'resonance2', 'wave2'}
+
+    @classmethod
+    def sub(cls, token):
+        return re.sub(cls.re, cls(token), token.value)
 
     def __init__(self, raw_opcode):
         self.index = 0
@@ -89,12 +93,9 @@ class OpcodeIntRepl:
 
 def validate_opcode_expr(raw_opcode, token):
     if raw_opcode not in opcodes:
-        opcode = re.sub(
-            OpcodeIntRepl.re,
-            OpcodeIntRepl(raw_opcode),
-            raw_opcode)
+        opcode = OpcodeIntRepl.sub(raw_opcode)
     else:
-        opcode = raw_opcode
+        opcode = raw_opcode.value
 
     try:
         validation = opcodes[opcode]
