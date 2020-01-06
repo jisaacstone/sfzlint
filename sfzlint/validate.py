@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from lark import Lark, Transformer, Discard
-from opcodes import validate_opcode_expr, ValidationError, ValidationWarning
+from pathlib import Path
+from lark import Lark, Transformer
+from .opcodes import validate_opcode_expr, ValidationError, ValidationWarning
 
 
 class Header(dict):
+    '''A dictionary with a name
+
+    used to store opcode pairs under their header tag
+    e.g. <global>hivel=25 -> Header<global>{'hivel': 25}
+    '''
     def __init__(self, name, *args, **kwargs):
         self.name = name
         super(Header, self).__init__(*args, **kwargs)
@@ -15,7 +21,10 @@ class Header(dict):
 
 
 class Note(int):
-    '''A midi note name that acts like an int'''
+    '''A midi note name that acts like an int.
+
+    This exists so that notes can be compared in the Range() validators
+    '''
 
     notes = {'c': 0, 'c#': 1, 'db': 1, 'd': 2, 'd#': 3, 'eb': 3,
              'e': 4, 'f': 5, 'f#': 6, 'gb': 6, 'g': 7, 'g#': 8,
@@ -61,17 +70,14 @@ class SFZValidator(Transformer):
         name, value = items
         s_value = self._sanitize_value(value)
         self.defined_variables[str(name)] = s_value
-        raise Discard
 
     def include_macro(self, items):
         value, = items
         self.imports.append(self._sanitize_value(value))
-        raise Discard
 
     def opcode_exp(self, items):
         opcode, value = items
         self._validate_opcode(opcode, value)
-        raise Discard
 
     def start(self, items):
         return {
@@ -83,7 +89,7 @@ class SFZValidator(Transformer):
     def _validate_opcode(self, opcode, value):
         if self.current_header is None:
             self.errors.append(_error('opcode outside of header', opcode))
-            raise Discard
+            return
         if opcode in self.current_header:
             self.warnings.append(_error('duplicate opcode', opcode))
 
@@ -95,7 +101,6 @@ class SFZValidator(Transformer):
             self.errors.append(_error(e.message, e.token))
         except ValidationWarning as e:
             self.warnings.append(_error(e.message, e.token))
-        raise Discard
 
     def _sanitize_value(self, value):
         if value.type == 'ESCAPED_STRING':
@@ -114,8 +119,10 @@ class SFZValidator(Transformer):
 
 
 def parser(_singleton=[]):
+    '''Returns a Lark parser using the grammar in sfz.ebnf'''
     if not _singleton:
-        with open('sfz.ebnf', 'r') as fob:
+        grammar = Path(__file__).parent / 'sfz.ebnf'
+        with grammar.open() as fob:
             _singleton.append(Lark(fob.read(), parser='lalr'))
 
     return _singleton[0]
@@ -131,11 +138,4 @@ def validate_s(string):
     tree = parser().parse(string)
     validator = SFZValidator(visit_tokens=True)
     transformed = validator.transform(tree)
-    print('errors', validator.errors)
-    print('warnings', validator.warnings)
-    return transformed
-
-
-if __name__ == '__main__':
-    validated = validate('example.sfz')
-    print(validated)
+    return transformed, validator.errors, validator.warnings
