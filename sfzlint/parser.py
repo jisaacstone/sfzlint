@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from pathlib import Path
@@ -53,38 +52,61 @@ def _error(msg, token):
         'near': str(token)}
 
 
+class SFZ:
+    def __init__(self, *headers, defines=None, includes=None):
+        self.headers = list(headers)
+        self.defines = {} if defines is None else defines
+        self.includes = [] if includes is None else includes
+
+    def iterstr(self):
+        # TODO: defines: keep them or no?
+        for inc in self.includes:
+            yield f'#include "{inc}"\n'
+        for header in self.headers:
+            yield f'<{header.name}>\n'
+            for opcode, value in header.items():
+                yield f'{opcode}={value}\n'
+
+    def __str__(self):
+        def iter_with_cutoff(cutoff=20):
+            for index, string in enumerate(self.iterstr()):
+                if index == cutoff:
+                    yield '...'
+                    raise StopIteration
+                yield string
+
+        return ''.join(iter_with_cutoff())
+
+
 class SFZValidator(Transformer):
+    '''Turns the generated syntax tree into an instance of SFZ'''
+
     def __init__(self, *args, **kwargs):
         self.errors = []
         self.warnings = []
         self.current_header = None
-        self.defined_variables = {}
-        self.imports = []
+        self.sfz = SFZ()
         super(SFZValidator, self).__init__(*args, **kwargs)
 
     def header(self, items):
         self.current_header = Header(items[0])
-        return self.current_header
+        self.sfz.headers.append(self.current_header)
 
     def define_macro(self, items):
         name, value = items
         s_value = self._sanitize_value(value)
-        self.defined_variables[str(name)] = s_value
+        self.sfz.defines[str(name)] = s_value
 
     def include_macro(self, items):
         value, = items
-        self.imports.append(self._sanitize_value(value))
+        self.sfz.includes.append(self._sanitize_value(value))
 
     def opcode_exp(self, items):
         opcode, value = items
         self._validate_opcode(opcode, value)
 
     def start(self, items):
-        return {
-            'imports': self.imports,
-            'defines': self.defined_variables,
-            'headers': items,
-        }
+        return self.sfz
 
     def _validate_opcode(self, opcode, value):
         if self.current_header is None:
@@ -112,9 +134,9 @@ class SFZValidator(Transformer):
         elif value.type == 'NOTE_NAME':
             return Note(value)
         elif value.type == 'VARNAME':
-            if value not in self.defined_variables:
+            if value not in self.sfz.defines:
                 self.errors.append(_error('undefined variable', value))
-            return self.defined_variables[value]
+            return self.sfz.defines[value]
         return value
 
 
@@ -136,6 +158,6 @@ def validate(file_path):
 
 def validate_s(string):
     tree = parser().parse(string)
-    validator = SFZValidator(visit_tokens=True)
+    validator = SFZValidator()
     transformed = validator.transform(tree)
     return transformed, validator.errors, validator.warnings

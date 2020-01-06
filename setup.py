@@ -10,6 +10,7 @@ setup(
     author='jisaacstone',
     packages=['sfzlint'],
     package_data={'sfzlint': ['*.ebnf']},
+    test_suite='tests',
     entry_points={
         'console_scripts': [
             'sfzlint = sfzlint.linter:main',
@@ -19,5 +20,5 @@ setup(
         'lark-parser>=0.7.8',
     ],
     python_requires='>3.6',
-    liscense='MIT',
+    license='MIT',
 )
