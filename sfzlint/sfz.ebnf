@@ -1,35 +1,25 @@
-%import common.SIGNED_INT -> INT
-%import common.SIGNED_FLOAT -> FLOAT
-%import common.DIGIT
-%import common.LCASE_LETTER
-%import common.LETTER
-%import common.CNAME -> VARNAME
-%import common.WS -> _WS
-%import common.NEWLINE
-%import common.ESCAPED_STRING
-
 COMMENT: "//" /[^\r\n]/*
        | "/*" /(.|\n|\r)/* "*/"
 %ignore COMMENT
 
 
-start: (_macro | header | opcode_exp | _WS)*
+start: (_macro | header | opcode_exp | _ws)*
 
 
 header: "<" HEADR ">"
 HEADR : "region" | "group" | "control" | "global" | "curve" | "effect" | "master"
 
 
-_macro: (define_macro | include_macro)
+_macro: (define_macro | include_macro) _WSI? _NL
 
-define_macro: "#define" " "+ define_key " "+ define_value
+define_macro: "#define" _WSI define_key _WSI define_value
 ?define_key: "$" VARNAME
 ?define_value: INT | FLOAT | NOTE_NAME | _string | ATOM
 
-include_macro: "#include" " "+ (_string)
+include_macro: "#include" _WSI (ESCAPED_STRING|PATH)
 
 
-opcode_exp: OPCODE "=" opcode_value _WS
+opcode_exp: OPCODE "=" opcode_value _ws
 
 OPCODE: LCASE_LETTER ("_"|LCASE_LETTER|DIGIT)+
 
@@ -40,5 +30,20 @@ NOTE_NAME: LETTER ["#"|"b"] DIGIT
 
 ATOM.0: LETTER /[^=\s]/+
 
-_string: ESCAPED_STRING | PATH
+_string: ESCAPED_STRING | PATH | CUSTOM_OSC
 PATH: /[^=\s"'][^=\r\n]*/ "." /[a-zA-Z0-9._-~]/+
+CUSTOM_OSC: "*" LCASE_LETTER+
+
+
+_ws: _WSI | _NL
+
+
+%import common.SIGNED_INT -> INT
+%import common.SIGNED_FLOAT -> FLOAT
+%import common.DIGIT
+%import common.LCASE_LETTER
+%import common.LETTER
+%import common.CNAME -> VARNAME
+%import common.WS_INLINE -> _WSI
+%import common.NEWLINE -> _NL
+%import common.ESCAPED_STRING

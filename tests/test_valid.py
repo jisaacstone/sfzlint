@@ -78,3 +78,10 @@ class TestValid(TestCase):
         self.assertEqual(group['ampeg_release'], 0.3)
         self.assertEqual(region['sample'], 'c1.wav')
         self.assertEqual(region['key'], 'c1')
+
+    def test_silence_sample(self):
+        sfz = self._parse(
+            '''
+            <group>key=29 sample=*silence
+            ''')
+        self.assertEqual(sfz.headers[0]['sample'], '*silence')
