@@ -102,9 +102,9 @@ class SFZValidator(Transformer):
         self.sfz.headers.append(self.current_header)
 
     def define_macro(self, items):
-        name, value = items
+        varname, value = items
         s_value = self._sanitize_token(value)
-        self.sfz.defines[str(name)] = s_value
+        self.sfz.defines[varname.value] = s_value
 
     def include_macro(self, items):
         token, = items
@@ -148,9 +148,12 @@ class SFZValidator(Transformer):
         elif token.type == 'NOTE_NAME':
             return self._update_tok(token, Note(token))
         elif token.type == 'VARNAME':
-            if token not in self.sfz.defines:
+            if token.value not in self.sfz.defines:
                 self._err('undefined variable', token)
-            return self._update_tok(token, self.sfz.defines[token].value)
+                return token
+            else:
+                return self._update_tok(
+                    token, self.sfz.defines[token.value].value)
         return token
 
 
@@ -171,7 +174,7 @@ def validate(file_path, *args, **kwargs):
 
 
 def validate_s(string, *args, **kwargs):
-    tree = parser().parse(string)
+    tree = parser().parse(string + '\n')
     validator = SFZValidator(*args, **kwargs)
     transformed = validator.transform(tree)
     return transformed

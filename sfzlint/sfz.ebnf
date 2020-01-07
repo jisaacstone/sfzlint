@@ -2,6 +2,7 @@
 %import common.SIGNED_FLOAT -> FLOAT
 %import common.DIGIT
 %import common.LCASE_LETTER
+%import common.LETTER
 %import common.CNAME -> VARNAME
 %import common.WS -> _WS
 %import common.NEWLINE
@@ -28,16 +29,16 @@ define_macro: "#define" " "+ define_key " "+ define_value
 include_macro: "#include" " "+ (_string)
 
 
-opcode_exp: OPCODE "=" opcode_value
+opcode_exp: OPCODE "=" opcode_value _WS
 
 OPCODE: LCASE_LETTER ("_"|LCASE_LETTER|DIGIT)+
 
 ?opcode_value: INT | FLOAT | NOTE_NAME | _string | ATOM | define_key
 
 
-NOTE_NAME: LCASE_LETTER ["#"|"b"] DIGIT
+NOTE_NAME: LETTER ["#"|"b"] DIGIT
 
-ATOM: LCASE_LETTER ("_"|LCASE_LETTER)+
+ATOM.0: LETTER /[^=\s]/+
 
 _string: ESCAPED_STRING | PATH
 PATH: /[^=\s"'][^=\r\n]*/ "." /[a-zA-Z0-9._-~]/+

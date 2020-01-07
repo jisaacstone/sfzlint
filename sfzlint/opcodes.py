@@ -41,7 +41,7 @@ class Range(Validator):
             return f'{value} not in range {self.low} to {self.high}'
 
 
-def Choice(Validator):
+class Choice(Validator):
     def __init__(self, choices):
         self.choices = choices
 
@@ -78,6 +78,7 @@ class OpcodeIntRepl:
             return match.group()
         try:
             sub = self.subs[self.index]
+            self.index += 1
         except IndexError:
             raise ValidationError(
                 f'{self.raw} is not a valid opcode: '
@@ -108,6 +109,8 @@ def validate_opcode_expr(raw_opcode, token):
         raise ValidationError(
             f'expected {typenames[v_type]} got {token.value} ({opcode})',
             token)
+    if not validation.get('validator'):
+        print('ERROR', raw_opcode, validation, validation.get('validator'))
     err_msg = validation['validator'].validate(token.value)
     if err_msg:
         msg = f'{err_msg} ({opcode})'
@@ -139,7 +142,7 @@ opcodes = {
          'validator': Range(0, 4294967296)},
     'loop_mode':
         {'ver': 'v1', 'type': str,
-         'validator':  Choice(
+         'validator': Choice(
              {'no_loop', 'one_shot', 'loop_continuous', 'loop_sustain'})},
     'loop_start':
         {'ver': 'v1', 'type': int,
@@ -173,7 +176,7 @@ opcodes = {
          'validator': Range(0, 4294967296)},
     'off_mode':
         {'ver': 'v1', 'type': str,
-         'validator':  Choice({'fast', 'normal', 'time'})},
+         'validator': Choice({'fast', 'normal', 'time'})},
     'output':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 1024)},
@@ -230,7 +233,7 @@ opcodes = {
          'validator': Range(0, 127)},
     'sw_vel':
         {'ver': 'v1', 'type': str,
-         'validator':  Choice({'current', 'previous'})},
+         'validator': Choice({'current', 'previous'})},
     'lobpm':
         {'ver': 'v1', 'type': Real,
          'validator': Range(0, 500)},
@@ -263,7 +266,7 @@ opcodes = {
          'validator': Range(1, 100)},
     'trigger':
         {'ver': 'v1', 'type': str,
-         'validator':  Choice(
+         'validator': Choice(
              {'attack', 'release', 'first', 'legato', 'release_key'})},
     'on_loccN':
         {'ver': 'v1', 'type': int,
@@ -306,13 +309,13 @@ opcodes = {
          'validator': Range(0, 200)},
     'xf_cccurve':
         {'ver': 'v1', 'type': str,
-         'validator':  Choice({'gain', 'power'})},
+         'validator': Choice({'gain', 'power'})},
     'xf_keycurve':
         {'ver': 'v1', 'type': str,
-         'validator':  Choice({'gain', 'power'})},
+         'validator': Choice({'gain', 'power'})},
     'xf_velcurve':
         {'ver': 'v1', 'type': str,
-         'validator':  Choice({'gain', 'power'})},
+         'validator': Choice({'gain', 'power'})},
     'xfin_loccN':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 127)},
@@ -396,7 +399,7 @@ opcodes = {
          'validator': Range(0, 9600)},
     'fil_type':
         {'ver': 'v1', 'type': str,
-         'validator':  Choice(
+         'validator': Choice(
              {'lpf_1p', 'hpf_1p', 'lpf_2p', 'hpf_2p', 'bpf_2p', 'brf_2p'})},
     'fil_veltrack':
         {'ver': 'v1', 'type': int,
@@ -703,7 +706,7 @@ opcodes = {
          'validator': Range(0, 127)},
     'waveguide':
         {'ver': 'v2', 'type': str,
-         'validator':  Choice({'on', 'off'})},
+         'validator': Choice({'on', 'off'})},
     '#define':
         {'ver': 'v2', 'type': str,
          'validator': Any()},
@@ -724,13 +727,13 @@ opcodes = {
          'validator': Any()},
     'rt_dead':
         {'ver': 'v2', 'type': str,
-         'validator':  Choice({'on', 'off'})},
+         'validator': Choice({'on', 'off'})},
     'sustain_sw':
         {'ver': 'v2', 'type': str,
-         'validator':  Choice({'on', 'off'})},
+         'validator': Choice({'on', 'off'})},
     'sostenuto_sw':
         {'ver': 'v2', 'type': str,
-         'validator':  Choice({'on', 'off'})},
+         'validator': Choice({'on', 'off'})},
     'loprog':
         {'ver': 'v2', 'type': int,
          'validator': Range(0, 127)},
@@ -778,7 +781,7 @@ opcodes = {
          'validator': Range(0, 1200)},
     'fil2_type':
         {'ver': 'v2', 'type': str,
-         'validator':  Choice(
+         'validator': Choice(
              {'lpf_1p', 'hpf_1p', 'lpf_2p', 'hpf_2p', 'bpf_2p', 'brf_2p',
               'bpf_1p', 'brf_1p', 'apf_1p', 'lpf_2p_sv', 'hpf_2p_sv',
               'bpf_2p_sv', 'brf_2p_sv', 'pkf_2p', 'lpf_4p', 'hpf_4p', 'lpf_6p',

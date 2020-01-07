@@ -55,6 +55,14 @@ class TestValid(TestCase):
         self.assertEqual('sample', k)
         self.assertEqual('example.wav', v)
 
+    def test_string(self):
+        sfz = self._parse(
+            '''
+            <region>sw_label=Pseudo_Legato
+            ''')
+        region, = sfz.headers
+        self.assertEqual(region['sw_label'], 'Pseudo_Legato')
+
     def test_var_types(self):
         sfz = self._parse(
             '''

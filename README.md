@@ -1,8 +1,8 @@
-linter and parser for .sfz files
+Linter and parser for .sfz files
 
 Unfinished, probably don't use yet
 
-includes the `sfzlint` command line program:
+Includes the `sfzlint` command line program:
 
     sfzlint path/to/file.sfz
 
@@ -14,3 +14,7 @@ cannot include newlines or `=`.
 
     from sfzlint.parser import parser
     lark_tree = parser().parse(sfz_string)
+
+Opcode data is from [sfzformat.com](https://sfzformat.com/). I have observed some opcodes in my instruments that are not listed on sfzformat.
+For example `pitch_ccN` `volume_onccN` and `fileg_depthccN`. Pondering weather ARIA treats `cc` and `oncc` as interchangeable,
+though perhaps these are simply ignored by the player.
