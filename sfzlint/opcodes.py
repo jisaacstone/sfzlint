@@ -1,15 +1,6 @@
 import re
 from numbers import Real
-
-
-class ValidationException(Exception):
-    def __init__(self, message, token):
-        self.message = message
-        self.token = token
-
-
-ValidationError = type('ValidationError', (ValidationException,), {})
-ValidationWarning = type('ValidationWarning', (ValidationException,), {})
+from .errors import ValidationError, ValidationWarning
 
 
 class Validator:
@@ -1360,10 +1351,13 @@ opcodes = {
         {'ver': 'aria', 'type': int,
          'validator': Any()},
     'param_offset':
-        {'ver': 'aria', 'type': int,
+        {'ver': 'aria', 'type': int, 'header': 'effect',
          'validator': Any()},
     'vendor_specific':
         {'ver': 'aria', 'type': str,
+         'validator': Any()},
+    'type':
+        {'ver': 'aria', 'type': str, 'header': 'effect',
          'validator': Any()},
     'script':
         {'ver': 'linux seq', 'type': str,

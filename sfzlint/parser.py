@@ -1,21 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from lark import Lark, Transformer, Token
-from .opcodes import validate_opcode_expr, ValidationError, ValidationWarning
-
-
-class Header(dict):
-    '''A dictionary with a name
-
-    used to store opcode pairs under their header tag
-    e.g. <global>hivel=25 -> Header<global>{'hivel': 25}
-    '''
-    def __init__(self, name, *args, **kwargs):
-        self.name = name
-        super(Header, self).__init__(*args, **kwargs)
-
-    def __repr__(self):
-        return f'Header<{self.name}>{super(Header, self).__repr__()}'
+from .opcodes import validate_opcode_expr
+from .errors import ValidationError, ValidationWarning
+from .headers import Header, HeaderList
 
 
 class Note(int):
@@ -56,7 +44,7 @@ class Note(int):
 
 class SFZ:
     def __init__(self, *headers, defines=None, includes=None):
-        self.headers = list(headers)
+        self.headers = HeaderList(*headers)
         self.defines = {} if defines is None else defines
         self.includes = [] if includes is None else includes
 
@@ -68,6 +56,12 @@ class SFZ:
             yield f'<{header.name}>\n'
             for opcode, value in header.items():
                 yield f'{opcode}={value}\n'
+
+    # Don't know if I like this or not. Feel there is a better approach
+    # Just can't think of it at the moment
+    @property
+    def regions(self):
+        return [h for h in self.headers if h.name == 'region']
 
     def __str__(self):
         def iter_with_cutoff(cutoff=20):
@@ -98,8 +92,12 @@ class SFZValidator(Transformer):
         super(SFZValidator, self).__init__(*args, **kwargs)
 
     def header(self, items):
-        self.current_header = Header(items[0])
-        self.sfz.headers.append(self.current_header)
+        header = Header(items[0])
+        try:
+            self.sfz.headers.append(header)
+            self.current_header = header
+        except AttributeError as e:
+            self._err(e.args[0], items[0])
 
     def define_macro(self, items):
         varname, value = items
