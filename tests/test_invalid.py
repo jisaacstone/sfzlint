@@ -5,14 +5,14 @@ from sfzlint import parser
 from inspect import cleandoc
 
 
-class TestValid(TestCase):
+class TestInvalid(TestCase):
     def assertEqual(self, aa, bb, *args, **kwargs):
         # handle tokens transparently
         if hasattr(aa, 'value'):
             aa = aa.value
         if hasattr(bb, 'value'):
             bb = bb.value
-        return super(TestValid, self).assertEqual(aa, bb, *args, **kwargs)
+        return super(TestInvalid, self).assertEqual(aa, bb, *args, **kwargs)
 
     def _parse(self, docstring):
         errs = []

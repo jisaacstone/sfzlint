@@ -17,8 +17,11 @@ class Note(int):
                'ab': 8, 'a': 9, 'a#': 10, 'bb': 10, 'b': 11}
 
     def __new__(cls, note_name):
-        octave = int(note_name[-1])
-        key = note_name[:-1].lower()
+        try:
+            octave = int(note_name[-1])
+            key = note_name[:-1].lower()
+        except (ValueError, KeyError):
+            raise ValueError(f'could not convert string to Note: {note_name}')
         note = Note.notemap[key] + (octave * 12) + 12  # c1 == 24
         integer = super(Note, cls).__new__(cls, note)
         setattr(integer, 'note_name', note_name)
@@ -137,29 +140,33 @@ class SFZValidator(Transformer):
             token.type, value, token)
 
     def _sanitize_token(self, token):
-        if token.type == 'ESCAPED_STRING':
+        if token[0] == '"' and token[-1] == '"':
+            # qoated string
             return self._update_tok(token, token[1:-1])
-        elif token.type == 'INT':
-            return self._update_tok(token, int(token))
-        elif token.type == 'FLOAT':
-            return self._update_tok(token, float(token))
-        elif token.type == 'NOTE_NAME':
-            return self._update_tok(token, Note(token))
-        elif token.type == 'VARNAME':
-            if token.value not in self.sfz.defines:
+        elif token[0] == '$':
+            # defined variable
+            value = token[1:]
+            if value not in self.sfz.defines:
                 self._err('undefined variable', token)
                 return token
             else:
                 return self._update_tok(
-                    token, self.sfz.defines[token.value].value)
+                    token, self.sfz.defines[value].value)
+        for converter in (int, float, Note):
+            # numerics
+            try:
+                return self._update_tok(token, converter(token))
+            except ValueError:
+                pass
+        # string
         return token
 
 
 def parser(_singleton=[]):
-    '''Returns a Lark parser using the grammar in sfz.ebnf'''
+    '''Returns a Lark parser using the grammar in sfz.lark'''
     if not _singleton:
         _singleton.append(
-            Lark.open('sfz.ebnf', rel_to=__file__, parser='lalr'))
+            Lark.open('sfz.lark', rel_to=__file__, parser='lalr'))
 
     return _singleton[0]
 

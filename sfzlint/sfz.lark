@@ -1,0 +1,41 @@
+COMMENT: "//" /[^\r\n]/*
+       | "/*" /(.|\n|\r)/* "*/"
+%ignore COMMENT
+
+
+start: (_macro | header | opcode_exp | _ws)*
+
+
+header: "<" HEADR ">"
+HEADR : "region" | "group" | "control" | "global" | "curve" | "effect" | "master" | "midi"
+
+
+_macro: (define_macro | include_macro) _WSI? _NL
+
+define_macro: "#define" _WSI _define_key _WSI REST_OF_LINE
+_define_key: "$" VARNAME
+
+include_macro: "#include" _WSI (ESCAPED_STRING | REST_OF_LINE)
+
+// Is annoying to have to manually exclude comments, makes regex unreadable
+REST_OF_LINE: /([^\r\n\/]|\/[^\/*])+/
+
+
+opcode_exp: OPCODE "=" OPCODE_VALUE
+
+// Seems the always to be lowercase. No spec so just going with it
+OPCODE: LCASE_LETTER ("_"|LCASE_LETTER|DIGIT)+
+
+// Had to use lookaheads to get this to work
+OPCODE_VALUE.0: /([^=\r\n\/]|\/[^\/*])+(?=[\s\r\n])/
+
+
+_ws: _WSI | _NL
+
+
+%import common.DIGIT
+%import common.LCASE_LETTER
+%import common.CNAME -> VARNAME
+%import common.WS_INLINE -> _WSI
+%import common.NEWLINE -> _NL
+%import common.ESCAPED_STRING

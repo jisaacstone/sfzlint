@@ -85,3 +85,14 @@ class TestValid(TestCase):
             <group>key=29 sample=*silence
             ''')
         self.assertEqual(sfz.headers[0]['sample'], '*silence')
+
+    def test_label(self):
+        sfz = self._parse(
+            '''
+            <global> global_label=kick
+            amplitude_oncc20=75
+            master_label=18x18'' kick
+
+            <master> key=35
+            ''')
+        self.assertEqual(sfz.headers[0]['master_label'], "18x18'' kick")
