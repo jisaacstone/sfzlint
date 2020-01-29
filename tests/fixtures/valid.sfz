@@ -81,27 +81,6 @@ pitch_keycenter=$pitch_keycenter
 amp_velcurve_102=1
 
 <region>
-sample=arco\arco_c1_f_down.wav
-lokey=12
-hikey=24
-lovel=103
-hivel=124
-seq_length=2
-pitch_keycenter=$pitch_keycenter
-amp_velcurve_124=1
-
-<region>
-sample=arco\arco_c1_f_up.wav
-lokey=12
-hikey=24
-lovel=103
-hivel=124
-seq_length=2
-seq_position=2
-pitch_keycenter=$pitch_keycenter
-amp_velcurve_124=1
-
-<region>
 sample=arco\arco_c1_ff_down.wav
 lokey=12
 hikey=24

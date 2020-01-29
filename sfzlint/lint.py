@@ -33,13 +33,13 @@ def lint(options):
     else:
         filenames = path,
     for filename in filenames:
-        lint_file(filename)
+        lint_file(filename, spec_version=options.spec_version)
 
 
-def lint_file(filename):
+def lint_file(filename, spec_version):
     err_cb = ecb(filename)
     try:
-        validate(filename, err_cb=err_cb)
+        validate(filename, err_cb=err_cb, spec_version=spec_version)
     except (UnexpectedCharacters, UnexpectedToken) as e:
         message = str(e).split('\n', 1)[0]
         err_cb('ERR', message, e)
@@ -48,11 +48,17 @@ def lint_file(filename):
 def main():
     parser = ArgumentParser(description='linter/validator for sfz files')
     parser.add_argument(
-        'file', type=Path,
+        'file',
+        type=Path,
         help='sfz file or directory to recursivly search')
     parser.add_argument(
         '--format', choices=formats.keys(),
         help='error format for output')
+    parser.add_argument(
+        '--spec-version',
+        default='aria',
+        choices=('v1', 'v2', 'aria'),
+        help='sfz spec to validate against')
     args = parser.parse_args()
     lint(args)
 

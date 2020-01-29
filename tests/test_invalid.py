@@ -14,25 +14,15 @@ class TestInvalid(TestCase):
             bb = bb.value
         return super(TestInvalid, self).assertEqual(aa, bb, *args, **kwargs)
 
-    def _parse(self, docstring):
+    def _parse(self, docstring, **kwargs):
         errs = []
 
         def err_cb(*args):
             errs.append(args)
 
-        sfz = parser.validate_s(cleandoc(docstring), err_cb=err_cb)
+        sfz = parser.validate_s(cleandoc(docstring), err_cb=err_cb, **kwargs)
         self.assertTrue(errs)
         return sfz, errs
-
-    def test_dupe_global(self):
-        sfz, errs = self._parse(
-            '''
-            <global> lovel=0
-            <region> sample=kick.wav
-            <global> lovel=2
-            ''')
-        (_sev, _msg, token), = errs
-        self.assertEqual(token, 'global')
 
     def test_unknown_opcode(self):
         sfz, errs = self._parse(
@@ -52,3 +42,11 @@ class TestInvalid(TestCase):
             ''')
         (_sev, _msg, token), = errs
         self.assertEqual(token, 'sample')
+
+    def test_invalid_version(self):
+        sfz, errs = self._parse(
+            '''
+            <group>note_offset=12
+            ''', spec_version='v1')
+        (_sev, _msg, token), = errs
+        self.assertEqual(token, 'note_offset')

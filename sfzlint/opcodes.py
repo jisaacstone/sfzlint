@@ -83,7 +83,7 @@ class OpcodeIntRepl:
         return pre + sub
 
 
-def validate_opcode_expr(raw_opcode, token):
+def validate_opcode_expr(raw_opcode, token, valid_versions):
     if raw_opcode not in opcodes:
         opcode = OpcodeIntRepl.sub(raw_opcode)
     else:
@@ -100,12 +100,13 @@ def validate_opcode_expr(raw_opcode, token):
         raise ValidationError(
             f'expected {typenames[v_type]} got {token.value} ({opcode})',
             token)
-    if not validation.get('validator'):
-        print('ERROR', raw_opcode, validation, validation.get('validator'))
     err_msg = validation['validator'].validate(token.value)
     if err_msg:
         msg = f'{err_msg} ({opcode})'
         raise ValidationWarning(msg, token)
+    if validation['ver'] not in valid_versions:
+        raise ValidationError(
+            f'opcode is only in sfz spec {validation["ver"]}', raw_opcode)
 
 
 typenames = {

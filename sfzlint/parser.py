@@ -6,6 +6,13 @@ from .errors import ValidationError, ValidationWarning
 from .headers import Header, HeaderList
 
 
+valid_versions = {
+    'v1': {'v1'},
+    'v2': {'v1', 'v2'},
+    'aria': {'v1', 'v2', 'aria'},
+}
+
+
 class Note(int):
     '''A midi note name that acts like an int.
 
@@ -64,7 +71,7 @@ class SFZ:
     # Just can't think of it at the moment
     @property
     def regions(self):
-        return [h for h in self.headers if h.name == 'region']
+        return [h for h in self.headers if h.token == 'region']
 
     def __str__(self):
         def iter_with_cutoff(cutoff=20):
@@ -88,7 +95,12 @@ class SFZValidator(Transformer):
         if self.err_cb:
             self.err_cb('WARN', msg, token)
 
-    def __init__(self, err_cb=None, *args, **kwargs):
+    def __init__(self, err_cb=None, spec_version='aria', *args, **kwargs):
+        try:
+            self.valid_versions = valid_versions[spec_version.lower()]
+        except KeyError:
+            raise AttributeError(f'{spec_version} is an unknown sfz version')
+        self.spec_version = spec_version
         self.current_header = None
         self.sfz = SFZ()
         self.err_cb = err_cb
@@ -96,6 +108,7 @@ class SFZValidator(Transformer):
 
     def header(self, items):
         header = Header(items[0])
+        self._validate_header(header)
         try:
             self.sfz.headers.append(header)
             self.current_header = header
@@ -118,6 +131,11 @@ class SFZValidator(Transformer):
     def start(self, items):
         return self.sfz
 
+    def _validate_header(self, header):
+        if header.version not in self.valid_versions:
+            self._warn(f'header is only in sfz spec {header.version} '
+                       '{self.sfz_version} ({header.token})', header.token)
+
     def _validate_opcode(self, opcode, value):
         if self.current_header is None:
             self._err(f'opcode outside of header ({opcode})', opcode)
@@ -128,7 +146,7 @@ class SFZValidator(Transformer):
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
         try:
-            validate_opcode_expr(opcode, token)
+            validate_opcode_expr(opcode, token, self.valid_versions)
         except ValidationError as e:
             self._err(e.message, e.token)
         except ValidationWarning as e:

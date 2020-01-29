@@ -37,3 +37,14 @@ class TestCLIOptions(TestCase):
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
         self.assert_has_message('unknown opcode', calls)
+
+    @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'valid.sfz'), '--spec-version', 'v1'])
+    @patch('builtins.print')
+    def test_spec_version(self, print_mock):
+        lint.main()
+        self.assertTrue(print_mock.called)
+        calls = [ErrMsg(*a[0][0].split(':'))
+                 for a in print_mock.call_args_list]
+        self.assert_has_message('header is only in sfz spec v2', calls)
+        self.assert_has_message('opcode is only in sfz spec aria', calls)

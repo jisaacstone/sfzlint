@@ -8,7 +8,7 @@ Includes the `sfzlint` command line program:
 
 To build the linter I built a parser using [Lark](https://github.com/lark-parser/lark).
 
-This may be useful to some people. I've also included the `sfz.ebnf` file. It probably has bugs.
+This may be useful to some people. I've also included the `sfz.lark` file.
 The SFZ file format definition is vague. I had to make some assumptions. For example I assumed unquoted paths
 cannot include newlines or `=`. Also I assume opcodes and note names are always lowercase.
 
@@ -17,7 +17,7 @@ cannot include newlines or `=`. Also I assume opcodes and note names are always 
 
 Opcode data is from [sfzformat.com](https://sfzformat.com/). I have observed some opcodes in my instruments that are not listed on sfzformat.
 For example `pitch_ccN` `volume_onccN` and `fileg_depthccN`. Pondering weather ARIA treats `cc` and `oncc` as interchangeable,
-though perhaps these are simply ignored by the player.
+though perhaps these are bugs in the file that are simply ignored by the player.
 
 ## Installing
 
