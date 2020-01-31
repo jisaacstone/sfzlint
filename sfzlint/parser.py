@@ -4,13 +4,7 @@ from lark import Lark, Transformer, Token
 from .opcodes import validate_opcode_expr
 from .errors import ValidationError, ValidationWarning
 from .headers import Header, HeaderList
-
-
-valid_versions = {
-    'v1': {'v1'},
-    'v2': {'v1', 'v2'},
-    'aria': {'v1', 'v2', 'aria'},
-}
+from .spec import version_hierarchy
 
 
 class Note(int):
@@ -29,7 +23,10 @@ class Note(int):
             key = note_name[:-1].lower()
         except (ValueError, KeyError):
             raise ValueError(f'could not convert string to Note: {note_name}')
-        note = Note.notemap[key] + (octave * 12) + 12  # c1 == 24
+        try:
+            note = Note.notemap[key] + (octave * 12) + 12  # c1 == 24
+        except KeyError:
+            raise ValueError(f'unknown key: {key}')
         integer = super(Note, cls).__new__(cls, note)
         setattr(integer, 'note_name', note_name)
         return integer
@@ -96,11 +93,7 @@ class SFZValidator(Transformer):
             self.err_cb('WARN', msg, token)
 
     def __init__(self, err_cb=None, spec_version='aria', *args, **kwargs):
-        try:
-            self.valid_versions = valid_versions[spec_version.lower()]
-        except KeyError:
-            raise AttributeError(f'{spec_version} is an unknown sfz version')
-        self.spec_version = spec_version
+        self.spec_version = spec_version.lower()
         self.current_header = None
         self.sfz = SFZ()
         self.err_cb = err_cb
@@ -132,7 +125,7 @@ class SFZValidator(Transformer):
         return self.sfz
 
     def _validate_header(self, header):
-        if header.version not in self.valid_versions:
+        if header.version not in version_hierarchy[self.spec_version]:
             self._warn(f'header is only in sfz spec {header.version} '
                        '{self.sfz_version} ({header.token})', header.token)
 
@@ -146,7 +139,7 @@ class SFZValidator(Transformer):
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
         try:
-            validate_opcode_expr(opcode, token, self.valid_versions)
+            validate_opcode_expr(opcode, token, self.spec_version)
         except ValidationError as e:
             self._err(e.message, e.token)
         except ValidationWarning as e:
@@ -177,7 +170,7 @@ class SFZValidator(Transformer):
             except ValueError:
                 pass
         # string
-        return token
+        return self._update_tok(token, token.strip())
 
 
 def parser(_singleton=[]):

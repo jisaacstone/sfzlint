@@ -1,15 +1,16 @@
 import re
 from numbers import Real
 from .errors import ValidationError, ValidationWarning
+from .spec import version_hierarchy
 
 
 class Validator:
-    def validate(self, value):
+    def validate(self, token, *args):
         raise NotImplementedError
 
 
 class Any(Validator):
-    def validate(self, value):
+    def validate(self, token, *args):
         return None
 
 
@@ -17,9 +18,9 @@ class Min(Validator):
     def __init__(self, minimum):
         self.minimum = minimum
 
-    def validate(self, value):
-        if value < self.minimum:
-            return f'{value} less than minimum of {self.minimum}',
+    def validate(self, token, *args):
+        if token.value < self.minimum:
+            return f'{token} less than minimum of {self.minimum}',
 
 
 class Range(Validator):
@@ -27,20 +28,39 @@ class Range(Validator):
         self.low = low
         self.high = high
 
-    def validate(self, value):
-        if not self.low <= value <= self.high:
-            return f'{value} not in range {self.low} to {self.high}'
+    def validate(self, token, *args):
+        if not self.low <= token.value <= self.high:
+            return f'{token} not in range {self.low} to {self.high}'
 
 
 class Choice(Validator):
     def __init__(self, choices):
         self.choices = choices
 
-    def validate(self, value):
-        if value not in self.choices:
-            subbed = OpcodeIntRepl.sub(value)
+    def validate(self, token, *args):
+        if token.value not in self.choices:
+            subbed = OpcodeIntRepl.sub(token)
             if subbed not in self.choices:
-                return f'{value} not one of {self.choices}',
+                return f'{token.value} not one of {self.choices}'
+
+
+class VersionValidator(Validator):
+    def __init__(self, **mappings):
+        self.mappings = mappings
+
+    def validate(self, token, version):
+        if version in self.mappings:
+            return self.mappings[version].validate(token)
+        elif 'default' in self.mappings:
+            return self.mappings['default'].validate(token)
+
+
+class Alias(Validator):
+    def __init__(self, name):
+        self.name = name
+
+    def validate(self, token, *args):
+        return opcodes[self.name]['validator'].validate(token, *args)
 
 
 class OpcodeIntRepl:
@@ -83,7 +103,7 @@ class OpcodeIntRepl:
         return pre + sub
 
 
-def validate_opcode_expr(raw_opcode, token, valid_versions):
+def validate_opcode_expr(raw_opcode, token, spec_version):
     if raw_opcode not in opcodes:
         opcode = OpcodeIntRepl.sub(raw_opcode)
     else:
@@ -100,13 +120,13 @@ def validate_opcode_expr(raw_opcode, token, valid_versions):
         raise ValidationError(
             f'expected {typenames[v_type]} got {token.value} ({opcode})',
             token)
-    err_msg = validation['validator'].validate(token.value)
+    if validation['ver'] not in version_hierarchy[spec_version]:
+        raise ValidationError(
+            f'opcode is only in sfz spec {validation["ver"]}', raw_opcode)
+    err_msg = validation['validator'].validate(token, spec_version)
     if err_msg:
         msg = f'{err_msg} ({opcode})'
         raise ValidationWarning(msg, token)
-    if validation['ver'] not in valid_versions:
-        raise ValidationError(
-            f'opcode is only in sfz spec {validation["ver"]}', raw_opcode)
 
 
 typenames = {
@@ -126,6 +146,9 @@ opcodes = {
     'delay_ccN':
         {'ver': 'v1', 'type': Real,
          'validator': Range(0, 100)},
+    'delay_onccN':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('delay_ccN')},
     'delay_random':
         {'ver': 'v1', 'type': Real,
          'validator': Range(0, 100)},
@@ -136,18 +159,30 @@ opcodes = {
         {'ver': 'v1', 'type': str,
          'validator': Choice(
              {'no_loop', 'one_shot', 'loop_continuous', 'loop_sustain'})},
+    'loopmode':
+        {'ver': 'v2', 'type': str,
+         'validator': Alias('loop_mode')},
     'loop_start':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 4294967296)},
+    'loopstart':
+        {'ver': 'v2', 'type': int,
+         'validator': Alias('loop_start')},
     'loop_end':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 4294967296)},
+    'loppend':
+        {'ver': 'v2', 'type': int,
+         'validator': Alias('loop_end')},
     'offset':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 4294967296)},
     'offset_ccN':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 4294967296)},
+    'offset_onccN':
+        {'ver': 'v2', 'type': int,
+         'validator': Alias('offset_ccN')},
     'offset_random':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 4294967296)},
@@ -163,6 +198,9 @@ opcodes = {
     'group':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 4294967296)},
+    'polyphony_group':
+        {'ver': 'aria', 'type': int,
+         'validator': Alias('group')},
     'off_by':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 4294967296)},
@@ -278,6 +316,12 @@ opcodes = {
     'gain_ccN':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-144, 48)},
+    'gain_onccN':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('gain_ccN')},
+    'volume_onccN':
+        {'ver': 'aria', 'type': Real,
+         'validator': Alias('gain_ccN')},
     'width':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-100, 100)},
@@ -350,12 +394,18 @@ opcodes = {
     'eqN_bwccX':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-4, 4)},
+    'eqN_bw_onccX':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('eqN_bwccX')},
     'eqN_freq':
         {'ver': 'v1', 'type': Real,
          'validator': Range(0, 30000)},
     'eqN_freqccX':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-30000, 30000)},
+    'eqN_freq_onccX':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('eqN_freqccX')},
     'eqN_vel2freq':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-30000, 30000)},
@@ -365,6 +415,9 @@ opcodes = {
     'eqN_gainccX':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-96, 24)},
+    'eqN_gain_onccX':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('eqN_gainccX')},
     'eqN_vel2gain':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-96, 24)},
@@ -374,6 +427,9 @@ opcodes = {
     'cutoff_ccN':
         {'ver': 'v1', 'type': int,
          'validator': Range(-9600, 9600)},
+    'cutoff_onccN':
+        {'ver': 'v2', 'type': int,
+         'validator': Alias('cutoff_ccN')},
     'cutoff_chanaft':
         {'ver': 'v1', 'type': int,
          'validator': Range(-9600, 9600)},
@@ -425,7 +481,9 @@ opcodes = {
          'validator': Range(-127, 127)},
     'tune':
         {'ver': 'v1', 'type': int,
-         'validator': Range(-100, 100)},
+         'validator': VersionValidator(
+             default=Range(-100, 100),
+             aria=Range(-2400, 2400))},
     'ampeg_attack':
         {'ver': 'v1', 'type': Real,
          'validator': Range(0, 100)},
@@ -468,6 +526,9 @@ opcodes = {
     'ampeg_releaseccN':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-100, 100)},
+    'ampeg_release_onccN':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('ampeg_releaseccN')},
     'ampeg_vel2release':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-100, 100)},
@@ -477,6 +538,9 @@ opcodes = {
     'ampeg_sustainccN':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-100, 100)},
+    'ampeg_sustain_onccN':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('ampeg_sustainccN')},
     'ampeg_vel2sustain':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-100, 100)},
@@ -486,6 +550,9 @@ opcodes = {
     'ampeg_startccN':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-100, 100)},
+    'ampeg_start_onccN':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('ampeg_startccN')},
     'fileg_attack':
         {'ver': 'v1', 'type': Real,
          'validator': Range(0, 100)},
@@ -585,6 +652,9 @@ opcodes = {
     'amplfo_depthccN':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-10, 10)},
+    'amplfo_depth_onccN':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('amplfo_depthccN')},
     'amplfo_depthchanaft':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-10, 10)},
@@ -615,6 +685,9 @@ opcodes = {
     'fillfo_depthccN':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-1200, 1200)},
+    'fillfo_depth_onccN':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('fillfo_depthccN')},
     'fillfo_depthchanaft':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-1200, 1200)},
@@ -645,6 +718,9 @@ opcodes = {
     'pitchlfo_depthccN':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-1200, 1200)},
+    'pitchlfo_depth_onccN':
+        {'ver': 'v2', 'type': Real,
+         'validator': Alias('pitchlfo_depthccN')},
     'pitchlfo_depthchanaft':
         {'ver': 'v1', 'type': Real,
          'validator': Range(-1200, 1200)},
@@ -1195,9 +1271,6 @@ opcodes = {
     'off_time':
         {'ver': 'aria', 'type': Real,
          'validator': Any()},
-    'polyphony_group':
-        {'ver': 'aria', 'type': int,
-         'validator': Range(0, 4294967296)},
     'lohdccN':
         {'ver': 'aria', 'type': Real,
          'validator': Any()},
@@ -1240,6 +1313,9 @@ opcodes = {
     'amplitude_onccN':
         {'ver': 'aria', 'type': int,
          'validator': Range(0, 100)},
+    'amplitude_ccN':
+        {'ver': 'aria', 'type': int,
+         'validator': Alias('amplitude_onccN')},
     'amplitude_curveccN':
         {'ver': 'aria', 'type': '',
          'validator': Any()},

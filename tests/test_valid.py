@@ -96,3 +96,20 @@ class TestValid(TestCase):
             <master> key=35
             ''')
         self.assertEqual(sfz.headers[0]['master_label'], "18x18'' kick")
+
+    def test_version_validator(self):
+        sfz = self._parse(
+            '''
+            <region>
+            tune=-400
+            ''')
+        self.assertEqual(sfz.headers[0]['tune'], -400)
+
+    def test_alias(self):
+        sfz = self._parse(
+            '''
+            <region>
+            pitchlfo_depth_oncc17=0.5
+            loopmode=loop_sustain
+            ''')
+        self.assertEqual(sfz.headers[0]['pitchlfo_depth_oncc17'], 0.5)

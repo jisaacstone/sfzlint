@@ -35,7 +35,7 @@ class TestInvalid(TestCase):
         self.assertEqual(region['foo'], 'bar')
 
     def test_opcode_without_header(self):
-        sfz, errs = self._parse(
+        _, errs = self._parse(
             '''
             sample=out of my head.wav
             <region> key=db3
@@ -44,9 +44,18 @@ class TestInvalid(TestCase):
         self.assertEqual(token, 'sample')
 
     def test_invalid_version(self):
-        sfz, errs = self._parse(
+        _, errs = self._parse(
             '''
             <group>note_offset=12
             ''', spec_version='v1')
         (_sev, _msg, token), = errs
         self.assertEqual(token, 'note_offset')
+
+    def test_version_validator(self):
+        _, errs = self._parse(
+            '''
+            <region>
+            tune=-400
+            ''', spec_version='v1')
+        (_sev, _msg, token), = errs
+        self.assertEqual(token, -400)
