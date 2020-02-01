@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .parser import validate
 from argparse import ArgumentParser
 from pathlib import Path
 from lark.exceptions import UnexpectedCharacters, UnexpectedToken
+from .parser import validate
+from . import spec
 
 
 formats = {
@@ -33,13 +34,13 @@ def lint(options):
     else:
         filenames = path,
     for filename in filenames:
-        lint_file(filename, spec_version=options.spec_version)
+        lint_file(filename, spec_versions=options.spec_version)
 
 
-def lint_file(filename, spec_version):
+def lint_file(filename, spec_versions=None):
     err_cb = ecb(filename)
     try:
-        validate(filename, err_cb=err_cb, spec_version=spec_version)
+        validate(filename, err_cb=err_cb, spec_versions=spec_versions)
     except (UnexpectedCharacters, UnexpectedToken) as e:
         message = str(e).split('\n', 1)[0]
         err_cb('ERR', message, e)
@@ -56,8 +57,8 @@ def main():
         help='error format for output')
     parser.add_argument(
         '--spec-version',
-        default='aria',
-        choices=('v1', 'v2', 'aria'),
+        nargs='*',
+        choices=tuple(spec.ver_mapping.values()),
         help='sfz spec to validate against')
     args = parser.parse_args()
     lint(args)

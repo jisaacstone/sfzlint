@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 from collections import ChainMap
 from numbers import Real  # int or float
-from .validators import Any, Min, Range, Choice, Alias, VersionValidator
+from .validators import Any, Min, Range, Choice, Alias, Validator
 
 
 ver_mapping = {
@@ -13,16 +13,7 @@ ver_mapping = {
     'ARIA': 'aria',
     'LinuxSampler': 'linuxsampler',
     'Cakewalk': 'cakewalk',
-    'Cakewalk SFZ v2': 'v2',  # good enough? anyone use cakewalk as a target?
-}
-
-
-version_hierarchy = {
-    'v1': {'v1'},
-    'v2': {'v1', 'v2'},
-    'aria': {'v1', 'v2', 'aria'},
-    'linuxsampler': {'v1', 'v2', 'linuxsampler'},
-    'cakewalk': {'v1', 'cakewalk'},  # is this correct?
+    'Cakewalk SFZ v2': 'cakewalk v2',  # unimplementd by any player
 }
 
 
@@ -33,12 +24,17 @@ type_mapping = {
 }
 
 
-overrides = {
+class TuneValidator(Validator):
+    def validate(self, token, spec_versions):
+        if not spec_versions or 'aria' in spec_versions:
+            return Range(-2400, 2400).validate(token)
+        return Range(-100, 100).validate(token)
+
+
+overrides = {  # should get these into sfzlint.com.io if possilble
     'tune':
         {'ver': 'v1', 'type': int,
-         'validator': VersionValidator(
-             default=Range(-100, 100),
-             aria=Range(-2400, 2400))},
+         'validator': TuneValidator()},
     'type':
         {'ver': 'aria', 'type': str, 'header': 'effect',
          'validator': Any()},
@@ -87,25 +83,11 @@ def op_to_validator(op_data, **kwargs):
         name=op_data['name'],
         ver=ver_mapping[op_data['version']],
         **kwargs)
-    vv = op_data.get('value')
-    if vv:
-        if 'type_name' in vv:
-            valid_meta['type'] = type_mapping[vv['type_name']]
-        if 'min' in vv:
-            if not isinstance(vv['min'], Real):
-                raise TypeError(f'{op_data["name"]} bad value: {vv}')
-            if 'max' in vv:
-                if not isinstance(vv['max'], Real):
-                    # bad value, eg "SampleRate / 2"
-                    valid_meta['validator'] = Min(vv['min'])
-                else:
-                    valid_meta['validator'] = Range(vv['min'], vv['max'])
-            else:
-                valid_meta['validator'] = Min(vv['min'])
-        elif 'options' in vv:
-            valid_meta['validator'] = Choice([o['name'] for o in vv['options']])
-        else:
-            valid_meta['validator'] = Any()
+    data_value = op_data.get('value')
+    if data_value:
+        if 'type_name' in data_value:
+            valid_meta['type'] = type_mapping[data_value['type_name']]
+        valid_meta['validator'] = _validator(data_value)
     else:
         valid_meta['validator'] = Any()
     yield valid_meta
@@ -123,8 +105,22 @@ def op_to_validator(op_data, **kwargs):
                         mod, modulates=op_data['name'], mod_type=mod_type)
 
 
+def _validator(data_value):
+    if 'min' in data_value:
+        if 'max' in data_value:
+            if not isinstance(data_value['max'], Real):
+                # string value, eg "SampleRate / 2"
+                return Min(data_value['min'])
+            return Range(data_value['min'], data_value['max'])
+        return Min(data_value['min'])
+    if 'options' in data_value:
+        return Choice(
+            [o['name'] for o in data_value['options']])
+    return Any()
+
+
 def print_codes(printer=print):
     syn = _import()
     cat = syn['categories']
     for o in _extract_op(cat):
-        printer(', '.join(f'{k}={v}' for k, v in sorted(o.items())))
+        printer(', '.join(f'{k}={v}' for k, v in o.items()))

@@ -47,7 +47,7 @@ class TestInvalid(TestCase):
         _, errs = self._parse(
             '''
             <group>note_offset=12
-            ''', spec_version='v1')
+            ''', spec_versions=['v1'])
         (_sev, _msg, token), = errs
         self.assertEqual(token, 'note_offset')
 
@@ -56,6 +56,16 @@ class TestInvalid(TestCase):
             '''
             <region>
             tune=-400
-            ''', spec_version='v1')
+            ''', spec_versions=['v1'])
         (_sev, _msg, token), = errs
         self.assertEqual(token, -400)
+
+    def test_cakewalk_unimplemented(self):
+        _, errs = self._parse(
+            '''
+            <region>
+            noise_stereo=on
+            ''')
+        (sev, _msg, token), = errs
+        self.assertEqual(token, 'noise_stereo')
+        self.assertEqual(sev, 'WARN')

@@ -55,17 +55,6 @@ class Choice(Validator):
                 return f'{token.value} not one of {self.choices}'
 
 
-class VersionValidator(Validator):
-    def __init__(self, **mappings):
-        self.mappings = mappings
-
-    def validate(self, token, version):
-        if version in self.mappings:
-            return self.mappings[version].validate(token)
-        elif 'default' in self.mappings:
-            return self.mappings['default'].validate(token)
-
-
 class Alias(Validator):
     def __init__(self, name):
         self.name = name

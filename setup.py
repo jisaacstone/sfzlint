@@ -14,6 +14,7 @@ setup(
     entry_points={
         'console_scripts': [
             'sfzlint = sfzlint.lint:main',
+            'sfzprint = sfzlint.spec:print_codes',
         ]
     },
     install_requires=[

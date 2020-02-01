@@ -4,7 +4,6 @@ from lark import Lark, Transformer, Token
 from .opcodes import validate_opcode_expr
 from .errors import ValidationError, ValidationWarning
 from .headers import Header, HeaderList
-from .spec import version_hierarchy
 
 
 class Note(int):
@@ -83,6 +82,7 @@ class SFZ:
 
 class SFZValidator(Transformer):
     '''Turns the generated syntax tree into an instance of SFZ'''
+    spec_versions = None  # No specified version defautls to any
 
     def _err(self, msg, token):
         if self.err_cb:
@@ -92,8 +92,9 @@ class SFZValidator(Transformer):
         if self.err_cb:
             self.err_cb('WARN', msg, token)
 
-    def __init__(self, err_cb=None, spec_version='aria', *args, **kwargs):
-        self.spec_version = spec_version.lower()
+    def __init__(self, err_cb=None, spec_versions=None, *args, **kwargs):
+        if spec_versions:
+            self.spec_versions = spec_versions
         self.current_header = None
         self.sfz = SFZ()
         self.err_cb = err_cb
@@ -125,9 +126,9 @@ class SFZValidator(Transformer):
         return self.sfz
 
     def _validate_header(self, header):
-        if header.version not in version_hierarchy[self.spec_version]:
-            self._warn(f'header is only in sfz spec {header.version} '
-                       '{self.sfz_version} ({header.token})', header.token)
+        if self.spec_versions and header.version not in self.spec_versions:
+            self._warn(f'header spec {header.version} not in '
+                       f'{self.spec_versions} ({header.token})', header.token)
 
     def _validate_opcode(self, opcode, value):
         if self.current_header is None:
@@ -139,7 +140,7 @@ class SFZValidator(Transformer):
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
         try:
-            validate_opcode_expr(opcode, token, self.spec_version)
+            validate_opcode_expr(opcode, token, self.spec_versions)
         except ValidationError as e:
             self._err(e.message, e.token)
         except ValidationWarning as e:

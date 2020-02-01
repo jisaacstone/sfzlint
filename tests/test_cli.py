@@ -46,5 +46,5 @@ class TestCLIOptions(TestCase):
         self.assertTrue(print_mock.called)
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
-        self.assert_has_message('header is only in sfz spec v2', calls)
-        self.assert_has_message('opcode is only in sfz spec aria', calls)
+        self.assert_has_message('header spec v2 not in', calls)
+        self.assert_has_message('opcode spec aria is not', calls)
