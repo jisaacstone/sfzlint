@@ -2,9 +2,8 @@
 
 import yaml
 from pathlib import Path
-from collections import ChainMap
 from numbers import Real  # int or float
-from .validators import Any, Min, Range, Choice, Alias, VersionValidator
+from .validators import Any, Min, Range, Choice, Alias
 
 
 ver_mapping = {
@@ -33,22 +32,10 @@ type_mapping = {
 }
 
 
-overrides = {
-    'tune':
-        {'ver': 'v1', 'type': int,
-         'validator': VersionValidator(
-             default=Range(-100, 100),
-             aria=Range(-2400, 2400))},
-    'type':
-        {'ver': 'aria', 'type': str, 'header': 'effect',
-         'validator': Any()},
-}
-
-
 def _import(cache=[]):
     if not cache:
         with (Path(__file__).parent / 'syntax.yml').open() as syn_yml:
-            syntax = yaml.load(syn_yml, Loader=yaml.SafeLoader)
+            syntax = yaml.load(syn_yml, Loader=yaml.BaseLoader)
         cache.append(syntax)
     return cache[-1]
 
@@ -62,8 +49,7 @@ def _extract():
 
 def opcodes(key=None, cache=[]):
     if not cache:
-        ops = _extract()
-        cache.append(ChainMap(overrides, ops))
+        cache.append(_extract())
     return cache[-1]
 
 
@@ -92,18 +78,12 @@ def op_to_validator(op_data, **kwargs):
         if 'type_name' in vv:
             valid_meta['type'] = type_mapping[vv['type_name']]
         if 'min' in vv:
-            if not isinstance(vv['min'], Real):
-                raise TypeError(f'{op_data["name"]} bad value: {vv}')
             if 'max' in vv:
-                if not isinstance(vv['max'], Real):
-                    # bad value, eg "SampleRate / 2"
-                    valid_meta['validator'] = Min(vv['min'])
-                else:
-                    valid_meta['validator'] = Range(vv['min'], vv['max'])
+                valid_meta['validator'] = Range(vv['min'], vv['max'])
             else:
                 valid_meta['validator'] = Min(vv['min'])
         elif 'options' in vv:
-            valid_meta['validator'] = Choice([o['name'] for o in vv['options']])
+            valid_meta['validator'] = Choice(o['name'] for o in vv['options'])
         else:
             valid_meta['validator'] = Any()
     else:

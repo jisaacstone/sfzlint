@@ -1,66 +1,9 @@
+# -*- coding: utf-8 -*-
 import re
 from numbers import Real
 from .errors import ValidationError, ValidationWarning
-from .spec import version_hierarchy
-
-
-class Validator:
-    def validate(self, token, *args):
-        raise NotImplementedError
-
-
-class Any(Validator):
-    def validate(self, token, *args):
-        return None
-
-
-class Min(Validator):
-    def __init__(self, minimum):
-        self.minimum = minimum
-
-    def validate(self, token, *args):
-        if token.value < self.minimum:
-            return f'{token} less than minimum of {self.minimum}',
-
-
-class Range(Validator):
-    def __init__(self, low, high):
-        self.low = low
-        self.high = high
-
-    def validate(self, token, *args):
-        if not self.low <= token.value <= self.high:
-            return f'{token} not in range {self.low} to {self.high}'
-
-
-class Choice(Validator):
-    def __init__(self, choices):
-        self.choices = choices
-
-    def validate(self, token, *args):
-        if token.value not in self.choices:
-            subbed = OpcodeIntRepl.sub(token)
-            if subbed not in self.choices:
-                return f'{token.value} not one of {self.choices}'
-
-
-class VersionValidator(Validator):
-    def __init__(self, **mappings):
-        self.mappings = mappings
-
-    def validate(self, token, version):
-        if version in self.mappings:
-            return self.mappings[version].validate(token)
-        elif 'default' in self.mappings:
-            return self.mappings['default'].validate(token)
-
-
-class Alias(Validator):
-    def __init__(self, name):
-        self.name = name
-
-    def validate(self, token, *args):
-        return opcodes[self.name]['validator'].validate(token, *args)
+from . import spec
+from .validators import *
 
 
 class OpcodeIntRepl:
@@ -104,13 +47,13 @@ class OpcodeIntRepl:
 
 
 def validate_opcode_expr(raw_opcode, token, spec_version):
-    if raw_opcode not in opcodes:
+    if raw_opcode not in spec.opcodes():
         opcode = OpcodeIntRepl.sub(raw_opcode)
     else:
         opcode = raw_opcode.value
 
     try:
-        validation = opcodes[opcode]
+        validation = spec.opcodes()[opcode]
     except KeyError:
         raise ValidationWarning(
             f'unknown opcode ({opcode})',
@@ -120,7 +63,7 @@ def validate_opcode_expr(raw_opcode, token, spec_version):
         raise ValidationError(
             f'expected {typenames[v_type]} got {token.value} ({opcode})',
             token)
-    if validation['ver'] not in version_hierarchy[spec_version]:
+    if validation['ver'] not in spec.version_hierarchy[spec_version]:
         raise ValidationError(
             f'opcode is only in sfz spec {validation["ver"]}', raw_opcode)
     err_msg = validation['validator'].validate(token, spec_version)
@@ -134,9 +77,8 @@ typenames = {
     Real: 'integer or float',
     str: 'string',
 }
-
-
-opcodes = {
+# keeping around for now
+old_opcodes = {
     'count':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 4294967296)},
@@ -171,7 +113,7 @@ opcodes = {
     'loop_end':
         {'ver': 'v1', 'type': int,
          'validator': Range(0, 4294967296)},
-    'loppend':
+    'loopend':
         {'ver': 'v2', 'type': int,
          'validator': Alias('loop_end')},
     'offset':
