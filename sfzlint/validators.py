@@ -50,7 +50,7 @@ class Choice(Validator):
 
     def validate(self, token, *args):
         if token.value not in self.choices:
-            subbed = opcodes.OpcodeIntRepl.sub(token)
+            subbed, _ = opcodes.OpcodeIntRepl.sub(token)
             if subbed not in self.choices:
                 return f'{token.value} not one of {self.choices}'
 

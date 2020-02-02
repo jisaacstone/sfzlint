@@ -6,6 +6,12 @@ from .errors import ValidationError, ValidationWarning
 from .headers import Header, HeaderList
 
 
+def update_token(token, value):
+    # token.update is not released yet (lark v7.8)
+    return Token.new_borrow_pos(
+        token.type, value, token)
+
+
 class Note(int):
     '''A midi note name that acts like an int.
 
@@ -146,15 +152,10 @@ class SFZValidator(Transformer):
         except ValidationWarning as e:
             self._warn(e.message, e.token)
 
-    def _update_tok(self, token, value):
-        # token.update is not released yet (lark v7.8)
-        return Token.new_borrow_pos(
-            token.type, value, token)
-
     def _sanitize_token(self, token):
         if token[0] == '"' and token[-1] == '"':
             # qoated string
-            return self._update_tok(token, token[1:-1])
+            return update_token(token, token[1:-1])
         elif token[0] == '$':
             # defined variable
             value = token[1:]
@@ -162,16 +163,16 @@ class SFZValidator(Transformer):
                 self._err('undefined variable', token)
                 return token
             else:
-                return self._update_tok(
+                return update_token(
                     token, self.sfz.defines[value].value)
         for converter in (int, float, Note):
             # numerics
             try:
-                return self._update_tok(token, converter(token))
+                return update_token(token, converter(token))
             except ValueError:
                 pass
         # string
-        return self._update_tok(token, token.strip())
+        return update_token(token, token.strip())
 
 
 def parser(_singleton=[]):

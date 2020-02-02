@@ -2,7 +2,6 @@
 
 import yaml
 from pathlib import Path
-from collections import ChainMap
 from numbers import Real  # int or float
 from .validators import Any, Min, Range, Choice, Alias, Validator
 
@@ -25,13 +24,21 @@ type_mapping = {
 
 
 class TuneValidator(Validator):
-    def validate(self, token, spec_versions):
+    def validate(self, token, spec_versions, *args):
         if not spec_versions or 'aria' in spec_versions:
             return Range(-2400, 2400).validate(token)
         return Range(-100, 100).validate(token)
 
 
-overrides = {  # should get these into sfzlint.com.io if possilble
+class VarTargetValidator(Validator):
+    def __init__(self, meta):
+        self.choice_validator = meta['validator']
+
+    def validate(self, token, _, subs):
+        return self.choice_validator.validate(subs['target'])
+
+
+overrides = {
     'tune':
         {'ver': 'v1', 'type': int,
          'validator': TuneValidator()},
@@ -39,6 +46,15 @@ overrides = {  # should get these into sfzlint.com.io if possilble
         {'ver': 'aria', 'type': str, 'header': 'effect',
          'validator': Any()},
 }
+
+
+def _override(ops):
+    for k, v in overrides.items():
+        ops[k] = v
+    # the choices in the yml are 'target' choices not value choices
+    ops['varNN_target']['validator'] = VarTargetValidator(ops['varNN_target'])
+    del ops['varNN_target']['type']
+    return ops
 
 
 def _import(cache=[]):
@@ -59,7 +75,7 @@ def _extract():
 def opcodes(key=None, cache=[]):
     if not cache:
         ops = _extract()
-        cache.append(ChainMap(overrides, ops))
+        cache.append(_override(ops))
     return cache[-1]
 
 

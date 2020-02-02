@@ -113,3 +113,19 @@ class TestValid(TestCase):
             loopmode=loop_sustain
             ''')
         self.assertEqual(sfz.headers[0]['pitchlfo_depth_oncc17'], 0.5)
+
+    def test_double_n(self):
+        sfz = self._parse(
+            '''
+            <region>
+            var01_mod=mult
+            ''')
+        self.assertEqual(sfz.headers[0]['var01_mod'], 'mult')
+
+    def test_target(self):
+        sfz = self._parse(
+            '''
+            <region>
+            var01_eq1gain=5
+            ''')
+        self.assertEqual(sfz.headers[0]['var01_eq1gain'], 5)
