@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from lark import Lark, Transformer, Token
-from .opcodes import validate_opcode_expr
+from . import opcodes
 from .errors import ValidationError, ValidationWarning
 from .headers import Header, HeaderList
 
@@ -146,7 +146,7 @@ class SFZValidator(Transformer):
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
         try:
-            validate_opcode_expr(opcode, token, self.spec_versions)
+            opcodes.validate_opcode_expr(opcode, token, self.spec_versions)
         except ValidationError as e:
             self._err(e.message, e.token)
         except ValidationWarning as e:

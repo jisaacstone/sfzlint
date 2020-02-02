@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import yaml
+from argparse import ArgumentParser
 from pathlib import Path
 from numbers import Real  # int or float
 from .validators import Any, Min, Range, Choice, Alias, Validator
@@ -135,8 +136,41 @@ def _validator(data_value):
     return Any()
 
 
-def print_codes(printer=print):
+def print_codes(search=None, filters=None, printer=print):
+    order = {
+        'name': 0, 'ver': 1, 'validator': 2, 'mod_type': 3, 'modulates': 4}
+
+    def key(o_tup):
+        return order.get(o_tup[0], 10)
+
     syn = _import()
     cat = syn['categories']
     for o in _extract_op(cat):
-        printer(', '.join(f'{k}={v}' for k, v in o.items()))
+        if search and search not in o['name']:
+            continue
+        if filters:
+            if not all(o.get(k) == v for k, v in filters):
+                continue
+        printer(', '.join(
+            f'{k}={v}' for k, v in sorted(o.items(), key=key)))
+
+
+def sfzlist():
+    def eq_filter(string):
+        k, v = string.split('=')
+        return (k, v)
+
+    parser = ArgumentParser(
+        description='list know opcodes and metadata',
+        epilog='example: sfzlist --filter ver=v2')
+    parser.add_argument(
+        '--search', '-s',
+        help='seach name by substring')
+    parser.add_argument(
+        '--filter', '-f',
+        dest='filters',
+        nargs='*',
+        type=eq_filter,
+        help='filter fields by "key=value"')
+    args = parser.parse_args()
+    print_codes(args.search, args.filters)
