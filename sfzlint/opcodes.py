@@ -53,10 +53,12 @@ class OpcodeIntRepl:
                 self.raw)
         pre, num = match.groups()
         self.subs[sub] = int(num)
-        if pre.endswith('cc') and int(num) > 127:
-            raise ValidationWarning(
-                f'{num} is not a valid control code',
-                self.raw)
+        # aria has internal control codes
+        # commenting out until I get the list
+        # if pre.endswith('cc') and int(num) > 127:
+        #     raise ValidationWarning(
+        #         f'{num} is not a valid control code',
+        #         self.raw)
         return pre + sub
 
 

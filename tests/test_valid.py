@@ -129,3 +129,10 @@ class TestValid(TestCase):
             var01_eq1gain=5
             ''')
         self.assertEqual(sfz.headers[0]['var01_eq1gain'], 5)
+
+    def test_aria_control_code(self):
+        sfz = self._parse(
+            '''
+            <group>amplitude_oncc400=75
+            ''')
+        self.assertEqual(sfz.headers[0]['amplitude_oncc400'], 75)

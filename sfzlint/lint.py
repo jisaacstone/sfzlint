@@ -26,6 +26,10 @@ def ecb(path, e_format=formats['default']):
 
 def lint(options):
     path = Path(options.file)
+    config = {
+        'spec_versions': set(
+            options.spec_version) if options.spec_version else None
+    }
     if not path.exists:
         raise IOError(f'{path} not found')
     if path.is_dir():
@@ -33,13 +37,13 @@ def lint(options):
     else:
         filenames = path,
     for filename in filenames:
-        lint_file(filename, spec_versions=options.spec_version)
+        lint_file(filename, config=config)
 
 
-def lint_file(filename, spec_versions=None):
+def lint_file(filename, config):
     err_cb = ecb(filename)
     try:
-        validate(filename, err_cb=err_cb, spec_versions=spec_versions)
+        validate(filename, err_cb=err_cb, config=config)
     except (UnexpectedCharacters, UnexpectedToken) as e:
         message = str(e).split('\n', 1)[0]
         err_cb('ERR', message, e)

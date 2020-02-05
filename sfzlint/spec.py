@@ -4,7 +4,7 @@ import yaml
 from argparse import ArgumentParser
 from pathlib import Path
 from numbers import Real  # int or float
-from .validators import Any, Min, Range, Choice, Alias, Validator
+from . import validators
 
 
 ver_mapping = {
@@ -24,14 +24,14 @@ type_mapping = {
 }
 
 
-class TuneValidator(Validator):
+class TuneValidator(validators.Validator):
     def validate(self, token, spec_versions, *args):
         if not spec_versions or 'aria' in spec_versions:
-            return Range(-2400, 2400).validate(token)
-        return Range(-100, 100).validate(token)
+            return validators.Range(-2400, 2400).validate(token)
+        return validators.Range(-100, 100).validate(token)
 
 
-class VarTargetValidator(Validator):
+class VarTargetValidator(validators.Validator):
     def __init__(self, meta):
         self.choice_validator = meta['validator']
 
@@ -45,7 +45,7 @@ overrides = {
          'validator': TuneValidator()},
     'type':
         {'ver': 'aria', 'type': str, 'header': 'effect',
-         'validator': Any()},
+         'validator': validators.Any()},
 }
 
 
@@ -106,12 +106,12 @@ def op_to_validator(op_data, **kwargs):
             valid_meta['type'] = type_mapping[data_value['type_name']]
         valid_meta['validator'] = _validator(data_value)
     else:
-        valid_meta['validator'] = Any()
+        valid_meta['validator'] = validators.Any()
     yield valid_meta
     for alias in op_data.get('alias', []):
         alias_meta = {
             'ver': ver_mapping[alias['version']],
-            'validator': Alias(op_data['name']),
+            'validator': validators.Alias(op_data['name']),
             'name': alias['name']}
         yield alias_meta
     if 'modulation' in op_data:
@@ -127,13 +127,13 @@ def _validator(data_value):
         if 'max' in data_value:
             if not isinstance(data_value['max'], Real):
                 # string value, eg "SampleRate / 2"
-                return Min(data_value['min'])
-            return Range(data_value['min'], data_value['max'])
-        return Min(data_value['min'])
+                return validators.Min(data_value['min'])
+            return validators.Range(data_value['min'], data_value['max'])
+        return validators.Min(data_value['min'])
     if 'options' in data_value:
-        return Choice(
+        return validators.Choice(
             [o['name'] for o in data_value['options']])
-    return Any()
+    return validators.Any()
 
 
 def print_codes(search=None, filters=None, printer=print):

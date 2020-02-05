@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from collections import ChainMap
 from lark import Lark, Transformer, Token
 from . import opcodes
 from .errors import ValidationError, ValidationWarning
@@ -88,7 +89,9 @@ class SFZ:
 
 class SFZValidator(Transformer):
     '''Turns the generated syntax tree into an instance of SFZ'''
-    spec_versions = None  # No specified version defautls to any
+    default_config = {
+        'warn_undefined_var': False,
+    }
 
     def _err(self, msg, token):
         if self.err_cb:
@@ -98,9 +101,8 @@ class SFZValidator(Transformer):
         if self.err_cb:
             self.err_cb('WARN', msg, token)
 
-    def __init__(self, err_cb=None, spec_versions=None, *args, **kwargs):
-        if spec_versions:
-            self.spec_versions = spec_versions
+    def __init__(self, err_cb=None, config=None, *args, **kwargs):
+        self.config = ChainMap(config or {}, self.default_config)
         self.current_header = None
         self.sfz = SFZ()
         self.err_cb = err_cb
@@ -132,9 +134,11 @@ class SFZValidator(Transformer):
         return self.sfz
 
     def _validate_header(self, header):
-        if self.spec_versions and header.version not in self.spec_versions:
-            self._warn(f'header spec {header.version} not in '
-                       f'{self.spec_versions} ({header.token})', header.token)
+        if self.config.get('spec_versions'):
+            if header.version not in self.config['spec_versions']:
+                self._warn(f'header spec {header.version} not in '
+                           f'{self.config["spec_versions"]} ({header.token})',
+                           header.token)
 
     def _validate_opcode(self, opcode, value):
         if self.current_header is None:
@@ -146,7 +150,8 @@ class SFZValidator(Transformer):
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
         try:
-            opcodes.validate_opcode_expr(opcode, token, self.spec_versions)
+            opcodes.validate_opcode_expr(
+                opcode, token, self.config.get('spec_versions'))
         except ValidationError as e:
             self._err(e.message, e.token)
         except ValidationWarning as e:
@@ -160,7 +165,8 @@ class SFZValidator(Transformer):
             # defined variable
             value = token[1:]
             if value not in self.sfz.defines:
-                self._err('undefined variable', token)
+                if self.config['warn_undefined_var']:
+                    self._err('undefined variable', token)
                 return token
             else:
                 return update_token(

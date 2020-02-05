@@ -20,7 +20,8 @@ class TestInvalid(TestCase):
         def err_cb(*args):
             errs.append(args)
 
-        sfz = parser.validate_s(cleandoc(docstring), err_cb=err_cb, **kwargs)
+        sfz = parser.validate_s(
+            cleandoc(docstring), err_cb=err_cb, config=kwargs)
         self.assertTrue(errs)
         return sfz, errs
 
