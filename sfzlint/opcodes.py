@@ -25,6 +25,8 @@ class OpcodeIntRepl:
         opcode = re.sub(cls.re, instance, token.value)
         if opcode.startswith('varN'):
             return instance._handle_varNN(opcode, token), instance.subs
+        elif opcode.startswith('hint_'):
+            return instance._handle_hint(opcode, token), instance.subs
         return opcode, instance.subs
 
     def _handle_varNN(self, opcode, token):
@@ -34,6 +36,11 @@ class OpcodeIntRepl:
         self.subs['target'] = parser.update_token(
             token, opcode[5:].replace('X', 'N'))
         return parser.update_token(token, 'varNN_target')
+
+    def _handle_hint(self, opcode, token):
+        self.subs['target'] = parser.update_token(
+            token, opcode[5:])
+        return parser.update_token(token, 'hint_*')
 
     def __init__(self, raw_opcode):
         self.index = 0

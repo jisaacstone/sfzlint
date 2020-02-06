@@ -110,9 +110,12 @@ def op_to_validator(op_data, **kwargs):
     yield valid_meta
     for alias in op_data.get('alias', []):
         alias_meta = {
-            'ver': ver_mapping[alias['version']],
             'validator': validators.Alias(op_data['name']),
             'name': alias['name']}
+        if 'version' in alias:
+            alias_meta['ver'] = ver_mapping[alias['version']],
+        else:
+            alias_meta['ver'] = valid_meta['ver']
         yield alias_meta
     if 'modulation' in op_data:
         for mod_type, modulations in op_data['modulation'].items():

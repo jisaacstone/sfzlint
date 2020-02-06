@@ -136,3 +136,13 @@ class TestValid(TestCase):
             <group>amplitude_oncc400=75
             ''')
         self.assertEqual(sfz.headers[0]['amplitude_oncc400'], 75)
+
+    def test_hint(self):
+        sfz = self._parse(
+            '''
+            <control>
+            hint_ram_based=1
+            set_cc1=0
+            label_cc1=gate
+            ''')
+        self.assertEqual(sfz.headers[0]['hint_ram_based'], 1)
