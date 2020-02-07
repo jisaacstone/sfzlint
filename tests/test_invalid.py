@@ -30,7 +30,7 @@ class TestInvalid(TestCase):
             '''
             <region>foo=bar
             ''')
-        (_sev, _msg, token), = errs
+        (_sev, _msg, token, _), = errs
         self.assertEqual(token, 'foo')
         region, = sfz.regions
         self.assertEqual(region['foo'], 'bar')
@@ -41,7 +41,7 @@ class TestInvalid(TestCase):
             sample=out of my head.wav
             <region> key=db3
             ''')
-        (_sev, _msg, token), = errs
+        (_sev, _msg, token, _), = errs
         self.assertEqual(token, 'sample')
 
     def test_invalid_version(self):
@@ -49,7 +49,7 @@ class TestInvalid(TestCase):
             '''
             <group>note_offset=12
             ''', spec_versions=['v1'])
-        (_sev, _msg, token), = errs
+        (_sev, _msg, token, _), = errs
         self.assertEqual(token, 'note_offset')
 
     def test_version_validator(self):
@@ -58,7 +58,7 @@ class TestInvalid(TestCase):
             <region>
             tune=-400
             ''', spec_versions=['v1'])
-        (_sev, _msg, token), = errs
+        (_sev, _msg, token, _), = errs
         self.assertEqual(token, -400)
 
     def test_cakewalk_unimplemented(self):
@@ -67,6 +67,6 @@ class TestInvalid(TestCase):
             <region>
             noise_stereo=on
             ''')
-        (sev, _msg, token), = errs
+        (sev, _msg, token, _), = errs
         self.assertEqual(token, 'noise_stereo')
         self.assertEqual(sev, 'WARN')

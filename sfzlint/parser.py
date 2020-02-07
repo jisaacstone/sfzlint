@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from pathlib import Path
 from collections import ChainMap
 from lark import Lark, Transformer, Token
 from . import opcodes
@@ -62,7 +63,6 @@ class SFZ:
         self.includes = [] if includes is None else includes
 
     def iterstr(self):
-        # TODO: defines: keep them or no?
         for inc in self.includes:
             yield f'#include "{inc}"\n'
         for header in self.headers:
@@ -95,15 +95,16 @@ class SFZValidator(Transformer):
 
     def _err(self, msg, token):
         if self.err_cb:
-            self.err_cb('ERR', msg, token)
+            self.err_cb('ERR', msg, token, self.file_path)
 
     def _warn(self, msg, token):
         if self.err_cb:
-            self.err_cb('WARN', msg, token)
+            self.err_cb('WARN', msg, token, self.file_path)
 
     def __init__(self, err_cb=None, config=None, *args, **kwargs):
         self.config = ChainMap(config or {}, self.default_config)
         self.current_header = None
+        self.file_path = kwargs.pop('file_path', None)
         self.sfz = SFZ()
         self.err_cb = err_cb
         super(SFZValidator, self).__init__(*args, **kwargs)
@@ -124,7 +125,10 @@ class SFZValidator(Transformer):
 
     def include_macro(self, items):
         token, = items
-        self.sfz.includes.append(self._sanitize_token(token))
+        sanitized = self._sanitize_token(token)
+        if self.file_path:
+            self._load_include(sanitized)
+        self.sfz.includes.append(sanitized)
 
     def opcode_exp(self, items):
         opcode, value = items
@@ -132,6 +136,19 @@ class SFZValidator(Transformer):
 
     def start(self, items):
         return self.sfz
+
+    def _load_include(self, rel_path):
+        path = Path(self.file_path).parent / rel_path
+        if not path.is_file():
+            self._err('could not load include, file not found', rel_path)
+        else:
+            old_file = self.file_path
+            self.file_path = path
+            with path.open() as fob:
+                contents = fob.read()
+                tree = parser().parse(contents)
+                self.transform(tree)
+            self.file_path = old_file
 
     def _validate_header(self, header):
         if self.config.get('spec_versions'):
@@ -144,9 +161,14 @@ class SFZValidator(Transformer):
         if self.current_header is None:
             self._err(f'opcode outside of header ({opcode})', opcode)
             return
+        if '$' in opcode:
+            pre, post = opcode.split('$', 1)
+            replaced = self._varreplace('$' + post)
+            opcode = update_token(opcode, f'{pre}{replaced}')
         if opcode in self.current_header:
             self._warn('duplicate opcode', opcode)
 
+        opcode = update_token(opcode, opcode.lower())
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
         try:
@@ -157,20 +179,22 @@ class SFZValidator(Transformer):
         except ValidationWarning as e:
             self._warn(e.message, e.token)
 
+    def _varreplace(self, token):
+        value = token[1:]
+        if value not in self.sfz.defines:
+            if self.config['warn_undefined_var']:
+                self._err('undefined variable', token)
+            return token
+        else:
+            return self.sfz.defines[value].value
+
     def _sanitize_token(self, token):
         if token[0] == '"' and token[-1] == '"':
             # qoated string
             return update_token(token, token[1:-1])
         elif token[0] == '$':
             # defined variable
-            value = token[1:]
-            if value not in self.sfz.defines:
-                if self.config['warn_undefined_var']:
-                    self._err('undefined variable', token)
-                return token
-            else:
-                return update_token(
-                    token, self.sfz.defines[value].value)
+            return update_token(token, self._varreplace(token))
         for converter in (int, float, Note):
             # numerics
             try:

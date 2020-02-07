@@ -14,9 +14,10 @@ formats = {
 
 
 def ecb(path, e_format=formats['default']):
-    def err_callback(sev, msg, token):
+    def err_callback(sev, msg, token, file_path):
+        msg_path = file_path if file_path else path
         message = e_format.format(
-            path=path, dirname=path.parent, filename=path.name,
+            path=msg_path, dirname=path.parent, filename=path.name,
             line=token.line, col=token.column,
             sev=sev[0], msg=msg)
         print(message)

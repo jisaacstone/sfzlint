@@ -23,13 +23,15 @@ class TestCLIOptions(TestCase):
         msgs = {e.message[:msglen] for e in err_list}
         self.assertIn(message, msgs)
 
-    @patch('sys.argv', new=['sfzlint', str(fixture_dir / 'valid.sfz')])
+    @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'basic/valid.sfz')])
     @patch('builtins.print')
     def test_valid_file(self, print_mock):
         lint.main()
         self.assertFalse(print_mock.called)
 
-    @patch('sys.argv', new=['sfzlint', str(fixture_dir / 'bad.sfz')])
+    @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'basic/bad.sfz')])
     @patch('builtins.print')
     def test_invalid_file(self, print_mock):
         lint.main()
@@ -39,7 +41,25 @@ class TestCLIOptions(TestCase):
         self.assert_has_message('unknown opcode', calls)
 
     @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'valid.sfz'), '--spec-version', 'v1'])
+        'sfzlint', str(fixture_dir / 'basic')])
+    @patch('builtins.print')
+    def test_lint_dir(self, print_mock):
+        lint.main()
+        self.assertTrue(print_mock.called)
+        calls = [ErrMsg(*a[0][0].split(':'))
+                 for a in print_mock.call_args_list]
+        self.assert_has_message('unknown opcode', calls)
+
+    @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'include/hasinc.sfz')])
+    @patch('builtins.print')
+    def test_include_define(self, print_mock):
+        lint.main()
+        self.assertFalse(print_mock.called, print_mock.call_args_list)
+
+    @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'basic/valid.sfz'),
+        '--spec-version', 'v1'])
     @patch('builtins.print')
     def test_spec_version(self, print_mock):
         lint.main()

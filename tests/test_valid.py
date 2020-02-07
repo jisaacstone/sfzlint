@@ -24,13 +24,6 @@ class TestValid(TestCase):
         self.assertFalse(errs)
         return sfz
 
-    def test_include(self):
-        sfz = self._parse(
-            '''
-            #include "foobar.sfz"
-            ''')
-        self.assertIn('foobar.sfz', sfz.includes)
-
     def test_define(self):
         sfz = self._parse(
             '''
@@ -146,3 +139,20 @@ class TestValid(TestCase):
             label_cc1=gate
             ''')
         self.assertEqual(sfz.headers[0]['hint_ram_based'], 1)
+
+    def test_ucase(self):
+        sfz = self._parse(
+            '''
+            <group>
+            Volume=3
+            ''')
+        self.assertEqual(sfz.headers[0]['volume'], 3)
+
+    def test_ucase_var(self):
+        sfz = self._parse(
+            '''
+            #define $KICKTUNE 40
+            <control>
+            set_cc$KICKTUNE=63
+            ''')
+        self.assertEqual(sfz.headers[0]['set_cc40'], 63)
