@@ -1,0 +1,1 @@
+add cc validation including extended aria ccs: https://sfzformat.com/extensions/midi_ccs

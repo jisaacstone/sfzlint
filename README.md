@@ -19,13 +19,12 @@ cannot include newlines or `=`. Also I assume opcodes and note names are always 
     from sfzlint.parser import parser
     lark_tree = parser().parse(sfz_string)
 
-Opcode data is from [sfzformat.com](https://sfzformat.com/). I have observed some opcodes in my instruments that are not listed on sfzformat.
-For example `pitch_ccN` `volume_onccN` and `fileg_depthccN`. Pondering weather ARIA treats `cc` and `oncc` as interchangeable,
-though perhaps these are bugs in the file that are simply ignored by the player.
+Opcode data is from [sfzformat.com](https://sfzformat.com/). If you see a bug in `syntax.yml` consider putting you PR
+against [the source](https://github.com/sfzformat/sfzformat.github.io/blob/source/_data/sfz/syntax.yml)
 
 ## Installing
 
-I've not put this on pypi yet, as it is still buggy an incomplete. You can install with pip
+I've not put this on pypi yet, as it is still buggy. You can install with pip
 
     pip install git+git://github.com/jisaacstone/sfzlint.git
 

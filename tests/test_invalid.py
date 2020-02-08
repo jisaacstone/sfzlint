@@ -70,3 +70,14 @@ class TestInvalid(TestCase):
         (sev, _msg, token, _), = errs
         self.assertEqual(token, 'noise_stereo')
         self.assertEqual(sev, 'WARN')
+
+    def test_unknown_cc_format(self):
+        _, errs = self._parse(
+            '''
+            <control>
+            labelcc5=awesome
+            ''')
+        (sev, msg, token, _), = errs
+        self.assertEqual(token, 'labelcc5')
+        self.assertEqual(sev, 'WARN')
+        self.assertIn('undocumented alias', msg)

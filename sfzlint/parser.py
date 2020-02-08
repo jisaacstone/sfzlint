@@ -218,6 +218,7 @@ def validate(file_path, *args, **kwargs):
     with open(file_path, 'r') as fob:
         # can't use the file stream because the lexer calls len()
         file_data = fob.read()
+    kwargs['file_path'] = file_path
     return validate_s(file_data, *args, **kwargs)
 
 

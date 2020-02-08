@@ -1,5 +1,5 @@
 #include defs.sfz
 
 <control>
-labelcc$KICKKEY=Kick Key
-setcc$KICKKEY=80
+label_cc$KICKKEY=Kick Key
+set_cc$KICKKEY=80

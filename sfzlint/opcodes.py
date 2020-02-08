@@ -69,15 +69,39 @@ class OpcodeIntRepl:
         return pre + sub
 
 
+# most players treat cc, _cc, and _oncc interchangeably
+def _try_cc_subs(opcode, spec_opcodes):
+    cc_alts = ('_oncc', '_cc', 'cc')
+    for variation in cc_alts:  # order matters
+        if variation in opcode:
+            for alt in cc_alts:
+                if alt != variation:
+                    alternative = opcode.replace(variation, alt)
+                    if alternative in spec_opcodes:
+                        return alternative
+    return None
+
+
 def validate_opcode_expr(raw_opcode, token, spec_versions):
-    if raw_opcode not in spec.opcodes():
+    spec_opcodes = spec.opcodes()
+    if raw_opcode not in spec_opcodes:
         opcode, subs = OpcodeIntRepl.sub(raw_opcode)
     else:
         opcode = raw_opcode.value
         subs = {}
 
+    if opcode not in spec_opcodes:
+        if 'cc' in opcode:
+            new_opcode = _try_cc_subs(opcode, spec_opcodes)
+            if new_opcode:
+                validate_opcode_expr(
+                    parser.update_token(raw_opcode, new_opcode),
+                    token, spec_versions)
+                raise ValidationWarning(
+                    f'undocumented alias of {new_opcode} ({opcode})',
+                    raw_opcode)
     try:
-        validation = spec.opcodes()[opcode]
+        validation = spec_opcodes[opcode]
     except KeyError:
         raise ValidationWarning(
             f'unknown opcode ({opcode})',
