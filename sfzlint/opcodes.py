@@ -23,11 +23,18 @@ class OpcodeIntRepl:
     def sub(cls, token):
         instance = cls(token)
         opcode = re.sub(cls.re, instance, token.value)
-        if opcode.startswith('varN'):
-            return instance._handle_varNN(opcode, token), instance.subs
-        elif opcode.startswith('hint_'):
-            return instance._handle_hint(opcode, token), instance.subs
+        opcode = instance._handle_special_cases(opcode, token)
         return opcode, instance.subs
+
+    def _handle_special_cases(self, opcode, token):
+        # order matters here
+        if opcode.startswith('varN'):
+            return self._handle_varNN(opcode, token)
+        elif opcode.startswith('hint_'):
+            return self._handle_hint(opcode, token)
+        elif opcode.endswith('_mod'):
+            return self._handle_mod(opcode, token)
+        return opcode
 
     def _handle_varNN(self, opcode, token):
         # there are four opcodes that break the pattern
@@ -41,6 +48,11 @@ class OpcodeIntRepl:
         self.subs['target'] = parser.update_token(
             token, opcode[5:])
         return parser.update_token(token, 'hint_*')
+
+    def _handle_mod(self, opcode, token):
+        self.subs['target'] = parser.update_token(
+            token, opcode[:-4])
+        return parser.update_token(token, '*_mod')
 
     def __init__(self, raw_opcode):
         self.index = 0

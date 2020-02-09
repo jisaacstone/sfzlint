@@ -32,8 +32,8 @@ class TuneValidator(validators.Validator):
 
 
 class VarTargetValidator(validators.Validator):
-    def __init__(self, meta):
-        self.choice_validator = meta['validator']
+    def __init__(self, validator):
+        self.choice_validator = validator
 
     def validate(self, token, _, subs):
         return self.choice_validator.validate(subs['target'])
@@ -53,7 +53,15 @@ def _override(ops):
     for k, v in overrides.items():
         ops[k] = v
     # the choices in the yml are 'target' choices not value choices
-    ops['varNN_target']['validator'] = VarTargetValidator(ops['varNN_target'])
+    ops['varNN_target']['validator'] = VarTargetValidator(
+        ops['varNN_target']['validator'])
+    # should we find a way to handle these cases in the yml itself?
+    ops['*_mod']['validator'] = VarTargetValidator(
+        validators.Choice(
+            ('delay', 'delay_beats', 'stop_beats', 'offset', 'pitch',
+             'tune', 'volume', 'amplitude', 'cutoff', 'resonance',
+             'fil_gain', 'cutoff2', 'resonance2', 'fil2_gain', 'pan',
+             'position', 'width', 'bitred', 'decim')))
     del ops['varNN_target']['type']
     return ops
 

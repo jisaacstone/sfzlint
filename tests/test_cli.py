@@ -28,7 +28,7 @@ class TestCLIOptions(TestCase):
     @patch('builtins.print')
     def test_valid_file(self, print_mock):
         lint.main()
-        self.assertFalse(print_mock.called)
+        self.assertFalse(print_mock.called, print_mock.call_args_list)
 
     @patch('sys.argv', new=[
         'sfzlint', str(fixture_dir / 'basic/bad.sfz')])

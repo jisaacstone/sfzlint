@@ -6,7 +6,6 @@
  *  Copyright 2013 D. Smolken.
  *  Royalty-free for all commercial and non-commercial use. */
 #define $pitch_keycenter 24
-#include "another/file.sfz"
 
 <global>
 sw_default=70 // test comment

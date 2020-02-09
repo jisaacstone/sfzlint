@@ -156,3 +156,12 @@ class TestValid(TestCase):
             set_cc$KICKTUNE=63
             ''')
         self.assertEqual(sfz.headers[0]['set_cc40'], 63)
+
+    def test_valid(self):
+        sfz = self._parse(
+            '''
+            <region>
+            cutoff_mod=mult amplitude_mod=add
+            ''')
+        region = sfz.headers[0]
+        self.assertEqual(region['cutoff_mod'], 'mult')
