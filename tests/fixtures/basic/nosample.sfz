@@ -1,0 +1,9 @@
+<global>
+sw_default=70 // test comment
+
+<region>
+sample=arco\arco_does_not_exist.wav
+lokey=12 hikey=24 hivel=15
+seq_length=2
+pitch_keycenter=18
+amp_velcurve_15=1

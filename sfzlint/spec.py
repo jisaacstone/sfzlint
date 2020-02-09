@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import yaml
+import os
 from argparse import ArgumentParser
 from pathlib import Path
 from numbers import Real  # int or float
@@ -25,10 +26,29 @@ type_mapping = {
 
 
 class TuneValidator(validators.Validator):
-    def validate(self, token, spec_versions, *args):
+    def validate(self, token, config, *args):
+        spec_versions = config.get('spec_versions')
         if not spec_versions or 'aria' in spec_versions:
             return validators.Range(-2400, 2400).validate(token)
         return validators.Range(-100, 100).validate(token)
+
+
+class SampleValidator(validators.Validator):
+    def validate(self, token, config, *args):
+        file_path = config.get('file_path')
+        if not file_path:
+            return
+        relpath = Path(token.replace('\\', '/'))
+        try:
+            resolved = (Path(file_path).parent / relpath).resolve(strict=True)
+        except FileNotFoundError:
+            return f'file not found "{token}"'
+
+        parts = reversed(relpath.parts)
+        for part in parts:
+            resolved = resolved.parent
+            if part not in os.listdir(resolved):
+                return f'case does not match file for "{token}"'
 
 
 class VarTargetValidator(validators.Validator):
@@ -43,6 +63,9 @@ overrides = {
     'tune':
         {'ver': 'v1', 'type': int,
          'validator': TuneValidator()},
+    'sample':
+        {'ver': 'v1', 'type': str,
+         'validator': SampleValidator()},
     'type':
         {'ver': 'aria', 'type': str, 'header': 'effect',
          'validator': validators.Any()},

@@ -94,7 +94,7 @@ def _try_cc_subs(opcode, spec_opcodes):
     return None
 
 
-def validate_opcode_expr(raw_opcode, token, spec_versions):
+def validate_opcode_expr(raw_opcode, token, config):
     spec_opcodes = spec.opcodes()
     if raw_opcode not in spec_opcodes:
         opcode, subs = OpcodeIntRepl.sub(raw_opcode)
@@ -108,7 +108,7 @@ def validate_opcode_expr(raw_opcode, token, spec_versions):
             if new_opcode:
                 validate_opcode_expr(
                     parser.update_token(raw_opcode, new_opcode),
-                    token, spec_versions)
+                    token, config)
                 raise ValidationWarning(
                     f'undocumented alias of {new_opcode} ({opcode})',
                     raw_opcode)
@@ -124,6 +124,7 @@ def validate_opcode_expr(raw_opcode, token, spec_versions):
         raise ValidationError(
             f'expected {typenames[v_type]} got {token.value} ({opcode})',
             token)
+    spec_versions = config.get('spec_versions')
     if spec_versions and validation['ver'] not in spec_versions:
         raise ValidationError(
             f'opcode spec {validation["ver"]} is not one of {spec_versions}',
@@ -134,7 +135,7 @@ def validate_opcode_expr(raw_opcode, token, spec_versions):
             'cakewalk v2 opcodes are not implemented by any player',
             raw_opcode)
 
-    err_msg = validation['validator'].validate(token, spec_versions, subs)
+    err_msg = validation['validator'].validate(token, config, subs)
     if err_msg:
         msg = f'{err_msg} ({opcode})'
         raise ValidationWarning(msg, token)

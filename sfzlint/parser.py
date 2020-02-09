@@ -95,16 +95,15 @@ class SFZValidator(Transformer):
 
     def _err(self, msg, token):
         if self.err_cb:
-            self.err_cb('ERR', msg, token, self.file_path)
+            self.err_cb('ERR', msg, token, self.config.get('file_path'))
 
     def _warn(self, msg, token):
         if self.err_cb:
-            self.err_cb('WARN', msg, token, self.file_path)
+            self.err_cb('WARN', msg, token, self.config.get('file_path'))
 
     def __init__(self, err_cb=None, config=None, *args, **kwargs):
         self.config = ChainMap(config or {}, self.default_config)
         self.current_header = None
-        self.file_path = kwargs.pop('file_path', None)
         self.sfz = SFZ()
         self.err_cb = err_cb
         super(SFZValidator, self).__init__(*args, **kwargs)
@@ -126,7 +125,7 @@ class SFZValidator(Transformer):
     def include_macro(self, items):
         token, = items
         sanitized = self._sanitize_token(token)
-        if self.file_path:
+        if self.config.get('file_path'):
             self._load_include(sanitized)
         self.sfz.includes.append(sanitized)
 
@@ -138,17 +137,17 @@ class SFZValidator(Transformer):
         return self.sfz
 
     def _load_include(self, rel_path):
-        path = Path(self.file_path).parent / rel_path
+        path = Path(self.config['file_path']).parent / rel_path
         if not path.is_file():
             self._err('could not load include, file not found', rel_path)
         else:
-            old_file = self.file_path
-            self.file_path = path
+            old_file = self.config['file_path']
+            self.config['file_path'] = path
             with path.open() as fob:
                 contents = fob.read()
                 tree = parser().parse(contents)
                 self.transform(tree)
-            self.file_path = old_file
+            self.config['file_path'] = old_file
 
     def _validate_header(self, header):
         if self.config.get('spec_versions'):
@@ -172,8 +171,7 @@ class SFZValidator(Transformer):
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
         try:
-            opcodes.validate_opcode_expr(
-                opcode, token, self.config.get('spec_versions'))
+            opcodes.validate_opcode_expr(opcode, token, self.config)
         except ValidationError as e:
             self._err(e.message, e.token)
         except ValidationWarning as e:
@@ -218,7 +216,6 @@ def validate(file_path, *args, **kwargs):
     with open(file_path, 'r') as fob:
         # can't use the file stream because the lexer calls len()
         file_data = fob.read()
-    kwargs['file_path'] = file_path
     return validate_s(file_data, *args, **kwargs)
 
 

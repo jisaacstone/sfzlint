@@ -17,7 +17,7 @@ class ErrMsg(namedtuple('errmsg', (
         return super().__new__(cls, file, row, column, level, message)
 
 
-class TestCLIOptions(TestCase):
+class TestCLI(TestCase):
     def assert_has_message(self, message, err_list):
         msglen = len(message)
         msgs = {e.message[:msglen] for e in err_list}
@@ -42,9 +42,9 @@ class TestCLIOptions(TestCase):
 
     @patch('sys.argv', new=[
         'sfzlint', str(fixture_dir / 'basic')])
-    @patch('builtins.print')
-    def test_lint_dir(self, print_mock):
-        lint.main()
+    def test_lint_dir(self):
+        with patch('builtins.print') as print_mock:
+            lint.main()
         self.assertTrue(print_mock.called)
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
@@ -68,3 +68,23 @@ class TestCLIOptions(TestCase):
                  for a in print_mock.call_args_list]
         self.assert_has_message('header spec v2 not in', calls)
         self.assert_has_message('opcode spec aria is not', calls)
+
+    @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'basic/nosample.sfz')])
+    @patch('builtins.print')
+    def test_missing_sample(self, print_mock):
+        lint.main()
+        self.assertTrue(print_mock.called)
+        calls = [ErrMsg(*a[0][0].split(':'))
+                 for a in print_mock.call_args_list]
+        self.assert_has_message('file not found', calls)
+
+    @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'basic/badcase.sfz')])
+    def test_bad_case(self):
+        with patch('builtins.print') as print_mock:
+            lint.main()
+        self.assertTrue(print_mock.called)
+        calls = [ErrMsg(*a[0][0].split(':'))
+                 for a in print_mock.call_args_list]
+        self.assert_has_message('case does not match', calls)

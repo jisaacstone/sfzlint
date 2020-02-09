@@ -31,37 +31,6 @@ seq_position=2
 pitch_keycenter=$pitch_keycenter
 amp_velcurve_15=1
 
-<region>
-sample=arco\arco_c1_p_down.wav
-lokey=12
-hikey=c1
-lovel=16
-hivel=59
-seq_length=2
-pitch_keycenter=$pitch_keycenter
-amp_velcurve_59=1
-
-<region>
-sample=arco\arco_c1_p_up.wav
-lokey=12
-hikey=24
-lovel=16
-hivel=59
-seq_length=2
-seq_position=2
-pitch_keycenter=$pitch_keycenter
-amp_velcurve_59=1
-
-<region>
-sample=arco\arco_c1_mf_down.wav
-lokey=12
-hikey=24
-lovel=60
-hivel=102
-seq_length=2
-pitch_keycenter=$pitch_keycenter
-amp_velcurve_102=1
-
 <group>sw_lokey=70 sw_hikey=72
 sw_last=70
 bend_up=600
