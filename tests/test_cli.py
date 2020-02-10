@@ -80,6 +80,13 @@ class TestCLI(TestCase):
         self.assert_has_message('file not found', calls)
 
     @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'basic/relsample.sfz')])
+    def test_relative_path(self):
+        with patch('builtins.print') as print_mock:
+            lint.main()
+        self.assertFalse(print_mock.called, print_mock.call_args_list)
+
+    @patch('sys.argv', new=[
         'sfzlint', str(fixture_dir / 'basic/badcase.sfz')])
     def test_bad_case(self):
         with patch('builtins.print') as print_mock:

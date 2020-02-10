@@ -46,6 +46,8 @@ class SampleValidator(validators.Validator):
 
         parts = reversed(relpath.parts)
         for part in parts:
+            if part == '..':
+                break
             resolved = resolved.parent
             if part not in os.listdir(resolved):
                 return f'case does not match file for "{token}"'

@@ -1,0 +1,9 @@
+<global>
+sw_default=70 // test comment
+
+<region>
+sample=../samples/sounds/arco_c1_ff_down.wav
+lokey=12 hikey=24 hivel=15
+seq_length=2
+pitch_keycenter=18
+amp_velcurve_15=1

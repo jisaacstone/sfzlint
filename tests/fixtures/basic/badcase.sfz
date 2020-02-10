@@ -1,0 +1,5 @@
+<region> // real sample is lower case
+sample=arco\ARCO_c1_pp_down.wav
+lokey=12 hikey=24 hivel=15
+seq_length=2
+amp_velcurve_15=1

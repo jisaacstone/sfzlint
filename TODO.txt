@@ -1,1 +1,2 @@
 add cc validation including extended aria ccs: https://sfzformat.com/extensions/midi_ccs
+make it faster (700 ms just to load opcode list)
