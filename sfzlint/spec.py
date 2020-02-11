@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import yaml
 import os
+import pickle
+from functools import lru_cache
 from argparse import ArgumentParser
 from pathlib import Path
 from numbers import Real  # int or float
+import yaml
 from . import validators
 
 
@@ -23,6 +25,11 @@ type_mapping = {
     'float': Real,
     'string': str,
 }
+
+# there will be repetitive calls to listdir
+@lru_cache(maxsize=32)
+def listdir(path):
+    return set(os.listdir(path))
 
 
 class TuneValidator(validators.Validator):
@@ -49,7 +56,7 @@ class SampleValidator(validators.Validator):
             if part == '..':
                 break
             resolved = resolved.parent
-            if part not in os.listdir(resolved):
+            if part not in listdir(resolved):
                 return f'case does not match file for "{token}"'
 
 
@@ -104,13 +111,6 @@ def _extract():
     cat = syn['categories']
     ops = {o['name']: o for o in _extract_op(cat)}
     return ops
-
-
-def opcodes(key=None, cache=[]):
-    if not cache:
-        ops = _extract()
-        cache.append(_override(ops))
-    return cache[-1]
 
 
 def _extract_op(categories):
@@ -210,3 +210,20 @@ def sfzlist():
         help='filter fields by "key=value"')
     args = parser.parse_args()
     print_codes(args.search, args.filters)
+
+
+def _pickled(name, fn):
+    p_file = Path(__file__).parent / f'{name}.pickle'
+    if not p_file.exists():
+        data = fn()
+        with p_file.open('wb') as fob:
+            pickle.dump(data, fob)
+    else:
+        with p_file.open('rb') as fob:
+            data = pickle.load(fob)
+    return data
+
+
+# pickling as cache cuts script time by ~400ms on my system
+opcodes = _pickled('opcides', lambda: _override(_extract()))
+cc_opcodes = {k for k in opcodes if 'cc' in k and 'curvecc' not in k}

@@ -1,2 +1,5 @@
 add cc validation including extended aria ccs: https://sfzformat.com/extensions/midi_ccs
-make it faster (700 ms just to load opcode list)
+make it faster (700 ms just to load opcode list)  --  in progress
+fix bug: "expected string got int" for _label opcodes
+add script to pull latest .yml, delete .pickle caches
+Get sfz player metadata from sfzformat.io yml, create target player options

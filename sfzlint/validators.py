@@ -60,7 +60,7 @@ class Alias(Validator):
         self.name = name
 
     def validate(self, token, *args):
-        return spec.opcodes()[self.name]['validator'].validate(token, *args)
+        return spec.opcodes[self.name]['validator'].validate(token, *args)
 
     def __str__(self):
         return f'<Validator.Alias({self.name})>'
