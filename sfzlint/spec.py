@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import pickle
 from functools import lru_cache
 from argparse import ArgumentParser
@@ -209,7 +210,10 @@ def sfzlist():
         type=eq_filter,
         help='filter fields by "key=value"')
     args = parser.parse_args()
-    print_codes(args.search, args.filters)
+    try:
+        print_codes(args.search, args.filters)
+    except BrokenPipeError:
+        sys.stderr.close()
 
 
 def _pickled(name, fn):

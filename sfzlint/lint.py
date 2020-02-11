@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import sys
 from argparse import ArgumentParser
 from pathlib import Path
 from lark.exceptions import UnexpectedCharacters, UnexpectedToken
@@ -70,4 +71,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except BrokenPipeError:
+        sys.stderr.close()
