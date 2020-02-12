@@ -165,3 +165,12 @@ class TestValid(TestCase):
             ''')
         region = sfz.headers[0]
         self.assertEqual(region['cutoff_mod'], 'mult')
+
+    def test_int_label(self):
+        sfz = self._parse(
+            '''
+            <control>
+            set_cc1=0
+            label_cc1=150
+            ''')
+        self.assertEqual(sfz.headers[0]['label_cc1'], 150)

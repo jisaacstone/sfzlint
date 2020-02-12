@@ -4,6 +4,11 @@
 from setuptools import setup
 from pathlib import Path
 
+# remove the .pickle cache files
+# I'm lazy to hook into the setup functions
+for pfile in Path(__file__).parent.rglob('*.pickle'):
+    pfile.unlink()
+
 setup(
     name='sfzlint',
     version='0.1',
@@ -24,10 +29,3 @@ setup(
     python_requires='>3.6',
     license='MIT',
 )
-
-
-# remove the .pickle cache files
-# I'm lazy to hook into the setup functions
-if __name__ == '__main__':
-    for pfile in Path(__file__).parent.rglob('*.pickle'):
-        pfile.unlink()

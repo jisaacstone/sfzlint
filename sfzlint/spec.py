@@ -70,32 +70,31 @@ class VarTargetValidator(validators.Validator):
 
 
 overrides = {
-    'tune':
-        {'ver': 'v1', 'type': int,
-         'validator': TuneValidator()},
-    'sample':
-        {'ver': 'v1', 'type': str,
-         'validator': SampleValidator()},
-    'type':
-        {'ver': 'aria', 'type': str, 'header': 'effect',
-         'validator': validators.Any()},
+    'tune': {'validator': TuneValidator()},
+    'sample': {'validator': SampleValidator()},
+    'varNN_target': {'type': object},
+    '*_mod': {'validator': VarTargetValidator(validators.Choice(
+        ('delay', 'delay_beats', 'stop_beats', 'offset', 'pitch',
+         'tune', 'volume', 'amplitude', 'cutoff', 'resonance',
+         'fil_gain', 'cutoff2', 'resonance2', 'fil2_gain', 'pan',
+         'position', 'width', 'bitred', 'decim')))},
+    # if a label is parsed as an int by the lexer that is OK
+    'label_ccN': {'type': object},
+    'global_label': {'type': object},
+    'master_label': {'type': object},
+    'group_label': {'type': object},
+    'region_label': {'type': object},
+    'sw_label': {'type': object},
 }
 
 
 def _override(ops):
-    for k, v in overrides.items():
-        ops[k] = v
+    for k, override in overrides.items():
+        for o_key, o_val in override.items():
+            ops[k][o_key] = o_val
     # the choices in the yml are 'target' choices not value choices
     ops['varNN_target']['validator'] = VarTargetValidator(
         ops['varNN_target']['validator'])
-    # should we find a way to handle these cases in the yml itself?
-    ops['*_mod']['validator'] = VarTargetValidator(
-        validators.Choice(
-            ('delay', 'delay_beats', 'stop_beats', 'offset', 'pitch',
-             'tune', 'volume', 'amplitude', 'cutoff', 'resonance',
-             'fil_gain', 'cutoff2', 'resonance2', 'fil2_gain', 'pan',
-             'position', 'width', 'bitred', 'decim')))
-    del ops['varNN_target']['type']
     return ops
 
 
