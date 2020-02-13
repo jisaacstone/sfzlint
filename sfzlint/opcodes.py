@@ -128,7 +128,7 @@ def validate_opcode_expr(raw_opcode, token, config):
         raise ValidationError(
             f'opcode spec {validation["ver"]} is not one of {spec_versions}',
             raw_opcode)
-    if validation['ver'] == 'cakewalk v2' and (
+    if validation['ver'] == 'cakewalk_v2' and (
             not spec_versions or validation['ver'] not in spec_versions):
         raise ValidationWarning(
             'cakewalk v2 opcodes are not implemented by any player',

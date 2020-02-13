@@ -8,7 +8,7 @@ class Validator:
         raise NotImplementedError
 
     def __str__(self):
-        return f'<Validator.{self.__class__.__name__}>'
+        return f'<Validator.{self.__class__.__name__}()>'
 
 
 class Any(Validator):

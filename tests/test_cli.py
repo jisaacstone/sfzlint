@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from pathlib import Path
 from collections import namedtuple
 from sfzlint import lint
+from sfzlint.spec import sfzlist
 
 
 fixture_dir = Path(__file__).parent / 'fixtures'
@@ -17,7 +18,7 @@ class ErrMsg(namedtuple('errmsg', (
         return super().__new__(cls, file, row, column, level, message)
 
 
-class TestCLI(TestCase):
+class TestSFZLint(TestCase):
     def assert_has_message(self, message, err_list):
         msglen = len(message)
         msgs = {e.message[:msglen] for e in err_list}
@@ -95,3 +96,15 @@ class TestCLI(TestCase):
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
         self.assert_has_message('case does not match', calls)
+
+
+class TestSFZList(TestCase):
+    @patch('sys.argv', new=['sfzlist'])
+    def test_valid_file(self):
+        print_mock = MagicMock()
+        sfzlist(print_mock)
+        self.assertTrue(print_mock.called)
+        opcodes = {line[0][0].split(' ', 1)[0]
+                   for line in print_mock.call_args_list}
+        for test_opcode in ('cutoff2_onccN', 'sample', '*_mod', 'loop_mode'):
+            self.assertIn(test_opcode, opcodes)

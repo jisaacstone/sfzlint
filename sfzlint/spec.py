@@ -17,7 +17,7 @@ ver_mapping = {
     'ARIA': 'aria',
     'LinuxSampler': 'linuxsampler',
     'Cakewalk': 'cakewalk',
-    'Cakewalk SFZ v2': 'cakewalk v2',  # unimplementd by any player
+    'Cakewalk SFZ v2': 'cakewalk_v2',  # unimplementd by any player
 }
 
 
@@ -146,7 +146,7 @@ def op_to_validator(op_data, **kwargs):
             'validator': validators.Alias(op_data['name']),
             'name': alias['name']}
         if 'version' in alias:
-            alias_meta['ver'] = ver_mapping[alias['version']],
+            alias_meta['ver'] = ver_mapping[alias['version']]
         else:
             alias_meta['ver'] = valid_meta['ver']
         yield alias_meta
@@ -173,25 +173,44 @@ def _validator(data_value):
 
 
 def print_codes(search=None, filters=None, printer=print):
-    order = {
-        'name': 0, 'ver': 1, 'validator': 2, 'mod_type': 3, 'modulates': 4}
 
-    def key(o_tup):
-        return order.get(o_tup[0], 10)
-
-    syn = _import()
-    cat = syn['categories']
-    for o in _extract_op(cat):
+    for o in opcodes.values():
         if search and search not in o['name']:
             continue
         if filters:
             if not all(o.get(k) == v for k, v in filters):
                 continue
-        printer(', '.join(
-            f'{k}={v}' for k, v in sorted(o.items(), key=key)))
+
+        data = [
+            o.get('name', ''),
+            o.get('ver', ''),
+            str(o.get('validator', ''))[11:-1]]
+        if 'modulates' in o:
+            data.append(f'modulates={o["modulates"]}')
+
+        printer(' '.join(data))
 
 
-def sfzlist():
+def _pickled(name, fn):
+    p_file = Path(__file__).parent / f'{name}.pickle'
+    if not p_file.exists():
+        data = fn()
+        with p_file.open('wb') as fob:
+            pickle.dump(data, fob)
+    else:
+        with p_file.open('rb') as fob:
+            data = pickle.load(fob)
+    return data
+
+
+# pickling as cache cuts script time by ~400ms on my system
+opcodes = _pickled('opcides', lambda: _override(_extract()))
+cc_opcodes = {k for k in opcodes if 'cc' in k and 'curvecc' not in k}
+
+
+def sfzlist(printer=print):
+    '''Entry point for the sfzlist cli command'''
+
     def eq_filter(string):
         k, v = string.split('=')
         return (k, v)
@@ -210,23 +229,6 @@ def sfzlist():
         help='filter fields by "key=value"')
     args = parser.parse_args()
     try:
-        print_codes(args.search, args.filters)
+        print_codes(args.search, args.filters, printer)
     except BrokenPipeError:
         sys.stderr.close()
-
-
-def _pickled(name, fn):
-    p_file = Path(__file__).parent / f'{name}.pickle'
-    if not p_file.exists():
-        data = fn()
-        with p_file.open('wb') as fob:
-            pickle.dump(data, fob)
-    else:
-        with p_file.open('rb') as fob:
-            data = pickle.load(fob)
-    return data
-
-
-# pickling as cache cuts script time by ~400ms on my system
-opcodes = _pickled('opcides', lambda: _override(_extract()))
-cc_opcodes = {k for k in opcodes if 'cc' in k and 'curvecc' not in k}
