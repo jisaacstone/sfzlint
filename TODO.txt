@@ -1,4 +1,3 @@
-add cc validation including extended aria ccs: https://sfzformat.com/extensions/midi_ccs
 add script to pull latest .yml, delete .pickle caches
 Get sfz player metadata from sfzformat.io yml, create target player options  --  maybe not needed
 add unknown variable errors back in

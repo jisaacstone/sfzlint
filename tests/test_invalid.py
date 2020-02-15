@@ -81,3 +81,11 @@ class TestInvalid(TestCase):
         self.assertEqual(token, 'labelcc5')
         self.assertEqual(sev, 'WARN')
         self.assertIn('undocumented alias', msg)
+
+    def test_bad_control_code(self):
+        _, errs = self._parse(
+            '''
+            <group>amplitude_oncc420=75
+            ''')
+        (_sev, _, token, _), = errs
+        self.assertEqual(token, 'amplitude_oncc420')

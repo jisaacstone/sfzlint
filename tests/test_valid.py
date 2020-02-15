@@ -126,9 +126,9 @@ class TestValid(TestCase):
     def test_aria_control_code(self):
         sfz = self._parse(
             '''
-            <group>amplitude_oncc400=75
+            <group>amplitude_oncc140=75
             ''')
-        self.assertEqual(sfz.headers[0]['amplitude_oncc400'], 75)
+        self.assertEqual(sfz.headers[0]['amplitude_oncc140'], 75)
 
     def test_hint(self):
         sfz = self._parse(

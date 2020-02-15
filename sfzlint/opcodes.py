@@ -72,13 +72,16 @@ class OpcodeIntRepl:
                 self.raw)
         pre, num = match.groups()
         self.subs[sub] = int(num)
-        # aria has internal control codes
-        # commenting out until I get the list
-        # if pre.endswith('cc') and int(num) > 127:
-        #     raise ValidationWarning(
-        #         f'{num} is not a valid control code',
-        #         self.raw)
+        if pre.endswith('cc'):
+            _validate_cc_value(int(num), self.raw)
         return pre + sub
+
+
+def _validate_cc_value(cc_value, token):
+    # 0-127 are standard, 128-137 in sfz v2, 140-142 in aria
+    if cc_value > 137 and cc_value not in {140, 141, 142}:
+        raise ValidationWarning(
+            f'{cc_value} is not a valid control code', token)
 
 
 # most players treat cc, _cc, and _oncc interchangeably

@@ -143,10 +143,13 @@ class SFZValidator(Transformer):
         else:
             old_file = self.config['file_path']
             self.config['file_path'] = path
-            with path.open() as fob:
-                contents = fob.read()
-                tree = parser().parse(contents)
-                self.transform(tree)
+            try:
+                with path.open() as fob:
+                    contents = fob.read() + '\n'
+                    tree = parser().parse(contents)
+                    self.transform(tree)
+            except Exception as e:
+                self._err(f'error loading include, {e}', rel_path)
             self.config['file_path'] = old_file
 
     def _validate_header(self, header):

@@ -52,6 +52,16 @@ class TestSFZLint(TestCase):
         self.assert_has_message('unknown opcode', calls)
 
     @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'include/inbadfile.sfz')])
+    def test_include_parse_error(self):
+        with patch('builtins.print') as print_mock:
+            lint.main()
+        self.assertTrue(print_mock.called)
+        calls = [ErrMsg(*a[0][0].split(':', 3))
+                 for a in print_mock.call_args_list]
+        self.assert_has_message('error loading include', calls)
+
+    @patch('sys.argv', new=[
         'sfzlint', str(fixture_dir / 'include/hasinc.sfz')])
     @patch('builtins.print')
     def test_include_define(self, print_mock):
