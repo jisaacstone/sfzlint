@@ -4,8 +4,7 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 from collections import namedtuple
-from sfzlint import lint
-from sfzlint.spec import sfzlist
+from sfzlint.cli import sfzlint, sfzlist
 
 
 fixture_dir = Path(__file__).parent / 'fixtures'
@@ -28,14 +27,14 @@ class TestSFZLint(TestCase):
         'sfzlint', str(fixture_dir / 'basic/valid.sfz')])
     @patch('builtins.print')
     def test_valid_file(self, print_mock):
-        lint.main()
+        sfzlint()
         self.assertFalse(print_mock.called, print_mock.call_args_list)
 
     @patch('sys.argv', new=[
         'sfzlint', str(fixture_dir / 'basic/bad.sfz')])
     @patch('builtins.print')
     def test_invalid_file(self, print_mock):
-        lint.main()
+        sfzlint()
         self.assertTrue(print_mock.called)
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
@@ -45,7 +44,7 @@ class TestSFZLint(TestCase):
         'sfzlint', str(fixture_dir / 'basic')])
     def test_lint_dir(self):
         with patch('builtins.print') as print_mock:
-            lint.main()
+            sfzlint()
         self.assertTrue(print_mock.called)
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
@@ -55,7 +54,7 @@ class TestSFZLint(TestCase):
         'sfzlint', str(fixture_dir / 'include/inbadfile.sfz')])
     def test_include_parse_error(self):
         with patch('builtins.print') as print_mock:
-            lint.main()
+            sfzlint()
         self.assertTrue(print_mock.called)
         calls = [ErrMsg(*a[0][0].split(':', 3))
                  for a in print_mock.call_args_list]
@@ -65,7 +64,7 @@ class TestSFZLint(TestCase):
         'sfzlint', str(fixture_dir / 'include/hasinc.sfz')])
     @patch('builtins.print')
     def test_include_define(self, print_mock):
-        lint.main()
+        sfzlint()
         self.assertFalse(print_mock.called, print_mock.call_args_list)
 
     @patch('sys.argv', new=[
@@ -73,7 +72,7 @@ class TestSFZLint(TestCase):
         '--spec-version', 'v1'])
     @patch('builtins.print')
     def test_spec_version(self, print_mock):
-        lint.main()
+        sfzlint()
         self.assertTrue(print_mock.called)
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
@@ -84,7 +83,7 @@ class TestSFZLint(TestCase):
         'sfzlint', str(fixture_dir / 'basic/nosample.sfz')])
     @patch('builtins.print')
     def test_missing_sample(self, print_mock):
-        lint.main()
+        sfzlint()
         self.assertTrue(print_mock.called)
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
@@ -94,14 +93,14 @@ class TestSFZLint(TestCase):
         'sfzlint', str(fixture_dir / 'basic/relsample.sfz')])
     def test_relative_path(self):
         with patch('builtins.print') as print_mock:
-            lint.main()
+            sfzlint()
         self.assertFalse(print_mock.called, print_mock.call_args_list)
 
     @patch('sys.argv', new=[
         'sfzlint', str(fixture_dir / 'basic/badcase.sfz')])
     def test_bad_case(self):
         with patch('builtins.print') as print_mock:
-            lint.main()
+            sfzlint()
         self.assertTrue(print_mock.called)
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
@@ -116,5 +115,18 @@ class TestSFZList(TestCase):
         self.assertTrue(print_mock.called)
         opcodes = {line[0][0].split(' ', 1)[0]
                    for line in print_mock.call_args_list}
-        for test_opcode in ('cutoff2_onccN', 'sample', '*_mod', 'loop_mode'):
+        for test_opcode in ('cutoff2_onccN', 'sample', '*_mod', 'curve_index'):
             self.assertIn(test_opcode, opcodes)
+
+    @patch('sys.argv', new=[
+        'sfzlist', '--path', str(fixture_dir / 'basic')])
+    def test_path_dir(self):
+        print_mock = MagicMock()
+        sfzlist(print_mock)
+        self.assertTrue(print_mock.called)
+        opcodes = {line[0][0].split(' ', 1)[0]
+                   for line in print_mock.call_args_list}
+        for test_opcode in ('foo', 'sw_default', 'amp_velcurve_N'):
+            self.assertIn(test_opcode, opcodes)
+        for test_opcode in ('cutoff2_onccN', 'curve_index', '*_mod'):
+            self.assertNotIn(test_opcode, opcodes)

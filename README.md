@@ -2,7 +2,8 @@ Linter and parser for .sfz files
 
 Unfinished, expect bugs
 
-Includes the `sfzlint` and `sfzlist` command line utilities:
+Includes the `sfzlint` and `sfzlist` command line utilities
+`sfzlint` will parse and validate sfzfiles. If a directory is passed it will be recursivly searched for sfz files.
 
     $ sfzlint path/to/file.sfz
     path/to/file.sfz:60:11:W continuous not one of ['no_loop', 'one_shot', 'loop_continuous', 'loop_sustain'] (loop_mode)
@@ -10,7 +11,14 @@ Includes the `sfzlint` and `sfzlist` command line utilities:
     path/to/file.sfz:107:12:E expected integer got 0.1 (lfoN_freq)
     path/to/file.sfz:240:1:W unknown opcode (ampeg_sustain_curveccN)
 
-`sfzlist` will print a list of known opcodes and metadata to stdout
+`sfzlist` will print a list of known opcodes and metadata to stdout. Callig with `--path` will cause it to print opcodes found in that path
+
+    $ sfzlist --path /sfz/instra/Scarypiano/
+    amplitude_onccN aria Range(0,100) modulates=amplitude
+    lokey v1 Range(0,127)
+    ampeg_release_onccN v2 Alias(ampeg_releaseccN)
+    label_ccN aria Any()
+    bend_up v1 Range(-9600,9600)
 
 ## Features
 

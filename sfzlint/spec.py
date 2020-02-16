@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import pickle
 from functools import lru_cache
-from argparse import ArgumentParser
 from pathlib import Path
 from numbers import Real  # int or float
 import yaml
@@ -172,25 +170,6 @@ def _validator(data_value):
     return validators.Any()
 
 
-def print_codes(search=None, filters=None, printer=print):
-
-    for o in opcodes.values():
-        if search and search not in o['name']:
-            continue
-        if filters:
-            if not all(o.get(k) == v for k, v in filters):
-                continue
-
-        data = [
-            o.get('name', ''),
-            o.get('ver', ''),
-            str(o.get('validator', ''))[11:-1]]
-        if 'modulates' in o:
-            data.append(f'modulates={o["modulates"]}')
-
-        printer(' '.join(data))
-
-
 def _pickled(name, fn):
     p_file = Path(__file__).parent / f'{name}.pickle'
     if not p_file.exists():
@@ -206,29 +185,3 @@ def _pickled(name, fn):
 # pickling as cache cuts script time by ~400ms on my system
 opcodes = _pickled('opcides', lambda: _override(_extract()))
 cc_opcodes = {k for k in opcodes if 'cc' in k and 'curvecc' not in k}
-
-
-def sfzlist(printer=print):
-    '''Entry point for the sfzlist cli command'''
-
-    def eq_filter(string):
-        k, v = string.split('=')
-        return (k, v)
-
-    parser = ArgumentParser(
-        description='list know opcodes and metadata',
-        epilog='example: sfzlist --filter ver=v2')
-    parser.add_argument(
-        '--search', '-s',
-        help='seach name by substring')
-    parser.add_argument(
-        '--filter', '-f',
-        dest='filters',
-        nargs='*',
-        type=eq_filter,
-        help='filter fields by "key=value"')
-    args = parser.parse_args()
-    try:
-        print_codes(args.search, args.filters, printer)
-    except BrokenPipeError:
-        sys.stderr.close()

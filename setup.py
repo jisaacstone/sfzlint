@@ -19,8 +19,8 @@ setup(
     test_suite='tests',
     entry_points={
         'console_scripts': [
-            'sfzlint = sfzlint.lint:main',
-            'sfzlist = sfzlint.spec:sfzlist',
+            'sfzlint = sfzlint.cli:sfzlint',
+            'sfzlist = sfzlint.cli:sfzlist',
         ]
     },
     install_requires=[

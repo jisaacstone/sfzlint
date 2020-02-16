@@ -41,7 +41,7 @@ class Range(Validator):
             return f'cannot compare {token} with {self.low}, {self.high}'
 
     def __str__(self):
-        return f'<Validator.Range({self.low}, {self.high})>'
+        return f'<Validator.Range({self.low},{self.high})>'
 
 
 class Choice(Validator):
