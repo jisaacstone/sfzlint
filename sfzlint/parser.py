@@ -76,6 +76,11 @@ class SFZ:
     def regions(self):
         return [h for h in self.headers if h.token == 'region']
 
+    @property
+    def curves(self):
+        return {h['curve_index'].value: h for h in self.headers
+                if h.token == 'curve' and 'curve_index' in h}
+
     def __str__(self):
         def iter_with_cutoff(cutoff=20):
             for index, string in enumerate(self.iterstr()):
@@ -105,7 +110,9 @@ class SFZValidator(Transformer):
         self.config = ChainMap(config or {}, self.default_config)
         self.current_header = None
         self.sfz = SFZ()
+        self.config['sfz'] = self.sfz
         self.err_cb = err_cb
+        self._curveccs = []
         super(SFZValidator, self).__init__(*args, **kwargs)
 
     def header(self, items):
@@ -134,6 +141,7 @@ class SFZValidator(Transformer):
         self._validate_opcode(opcode, value)
 
     def start(self, items):
+        self._validate_curvecc()  # must be at the end
         return self.sfz
 
     def _load_include(self, rel_path):
@@ -173,12 +181,15 @@ class SFZValidator(Transformer):
         opcode = update_token(opcode, opcode.lower())
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
-        try:
-            opcodes.validate_opcode_expr(opcode, token, self.config)
-        except ValidationError as e:
-            self._err(e.message, e.token)
-        except ValidationWarning as e:
-            self._warn(e.message, e.token)
+        if 'curvecc' in opcode:
+            self._curveccs.append((opcode, token))
+        else:
+            try:
+                opcodes.validate_opcode_expr(opcode, token, self.config)
+            except ValidationError as e:
+                self._err(e.message, e.token)
+            except ValidationWarning as e:
+                self._warn(e.message, e.token)
 
     def _varreplace(self, token):
         value = token[1:]
@@ -204,6 +215,15 @@ class SFZValidator(Transformer):
                 pass
         # string
         return update_token(token, token.strip())
+
+    def _validate_curvecc(self):
+        for opcode, token in self._curveccs:
+            try:
+                opcodes.validate_curvecc(opcode, token, self.config)
+            except ValidationError as e:
+                self._err(e.message, e.token)
+            except ValidationWarning as e:
+                self._warn(e.message, e.token)
 
 
 def parser(_singleton=[]):

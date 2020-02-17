@@ -174,3 +174,27 @@ class TestValid(TestCase):
             label_cc1=150
             ''')
         self.assertEqual(sfz.headers[0]['label_cc1'], 150)
+
+    def test_default_curve(self):
+        sfz = self._parse(
+            '''
+            <region>
+            pitch_oncc27=100
+            pitch_curvecc27=1
+            ''')
+        self.assertEqual(sfz.headers[0]['pitch_curvecc27'], 1)
+
+    def test_custom_curve(self):
+        sfz = self._parse(
+            '''
+            <region>
+            amplitude_oncc110=100
+            amplitude_curvecc110=9
+
+            <curve>curve_index=9
+            v000=0
+            v063=0
+            v127=1
+            ''')
+        self.assertEqual(sfz.headers[0]['amplitude_curvecc110'], 9)
+        self.assertIn(9, sfz.curves)

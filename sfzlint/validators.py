@@ -64,3 +64,14 @@ class Alias(Validator):
 
     def __str__(self):
         return f'<Validator.Alias({self.name})>'
+
+
+class TargetValidator(Validator):
+    '''For when the choices refer to some part of the opcode itself
+    not the value of the opcode (which is unvalidated)
+    '''
+    def __init__(self, validator):
+        self.choice_validator = validator
+
+    def validate(self, token, _, subs):
+        return self.choice_validator.validate(subs['target'])

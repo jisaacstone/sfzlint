@@ -97,6 +97,28 @@ def _try_cc_subs(opcode):
     return None
 
 
+def validate_curvecc(raw_opcode, token, config):
+    '''Specializing for now, until we get this into the .yml'''
+    opcode, subs = OpcodeIntRepl.sub(raw_opcode)
+    known_op = opcode in spec.opcodes
+    if known_op:
+        validation = spec.opcodes[opcode]
+        spec_ver = config.get('spec_versions')
+        if spec_ver and validation['ver'] not in spec_ver:
+            raise ValidationError(
+                f'opcode spec {validation["ver"]} is not one of {spec_ver}',
+                raw_opcode)
+
+    err_msg = spec.CurveCCValidator().validate(token, config)
+    if err_msg:
+        msg = f'{err_msg} ({opcode})'
+        raise ValidationWarning(msg, token)
+
+    if not known_op:
+        raise ValidationWarning(
+            'curvecc opcode is not in the spec', raw_opcode)
+
+
 def validate_opcode_expr(raw_opcode, token, config):
     if raw_opcode not in spec.opcodes:
         opcode, subs = OpcodeIntRepl.sub(raw_opcode)

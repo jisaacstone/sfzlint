@@ -31,6 +31,7 @@ def listdir(path):
     return set(os.listdir(path))
 
 
+# special-purpose validators
 class TuneValidator(validators.Validator):
     def validate(self, token, config, *args):
         spec_versions = config.get('spec_versions')
@@ -59,19 +60,23 @@ class SampleValidator(validators.Validator):
                 return f'case does not match file for "{token}"'
 
 
-class VarTargetValidator(validators.Validator):
-    def __init__(self, validator):
-        self.choice_validator = validator
-
-    def validate(self, token, _, subs):
-        return self.choice_validator.validate(subs['target'])
+class CurveCCValidator(validators.Validator):
+    def validate(self, token, config, *args):
+        if token.value < 0:
+            return 'negative curve_index'
+        if token.value < 7:
+            # likely a default or built-in curve, no check
+            return
+        sfz = config.get('sfz')
+        if sfz and token.value not in sfz.curves:
+            return 'no corresponding curve_index found'
 
 
 overrides = {
     'tune': {'validator': TuneValidator()},
     'sample': {'validator': SampleValidator()},
     'varNN_target': {'type': object},
-    '*_mod': {'validator': VarTargetValidator(validators.Choice(
+    '*_mod': {'validator': validators.TargetValidator(validators.Choice(
         ('delay', 'delay_beats', 'stop_beats', 'offset', 'pitch',
          'tune', 'volume', 'amplitude', 'cutoff', 'resonance',
          'fil_gain', 'cutoff2', 'resonance2', 'fil2_gain', 'pan',
@@ -91,7 +96,7 @@ def _override(ops):
         for o_key, o_val in override.items():
             ops[k][o_key] = o_val
     # the choices in the yml are 'target' choices not value choices
-    ops['varNN_target']['validator'] = VarTargetValidator(
+    ops['varNN_target']['validator'] = validators.TargetValidator(
         ops['varNN_target']['validator'])
     return ops
 

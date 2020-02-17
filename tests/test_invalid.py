@@ -89,3 +89,19 @@ class TestInvalid(TestCase):
             ''')
         (_sev, _, token, _), = errs
         self.assertEqual(token, 'amplitude_oncc420')
+
+    def test_custom_curve(self):
+        sfz, errs = self._parse(
+            '''
+            <region>
+            amplitude_oncc110=100
+            amplitude_curvecc110=19
+
+            <curve>curve_index=9
+            v000=0
+            v063=0
+            v127=1
+            ''')
+        self.assertEqual(sfz.headers[0]['amplitude_curvecc110'], 19)
+        (_sev, _, token, _), = errs
+        self.assertEqual(token, 19)

@@ -1,4 +1,4 @@
 add script to pull latest .yml, delete .pickle caches
-Get sfz player metadata from sfzformat.io yml, create target player options  --  maybe not needed
-curvecc validation
+preprocessor setep to pull in inculde and replace defines
 create a release on GH, get up on pypi
+don't report seeors in #includes
