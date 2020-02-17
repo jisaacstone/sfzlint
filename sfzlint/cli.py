@@ -18,13 +18,13 @@ def print_code(code, search=None, filters=None, printer=print):
             return
 
     data = [
-        code.get('name', ''),
-        code.get('ver', ''),
-        str(code.get('validator', ''))[11:-1]]
+        code.get('name', '').ljust(25, ' '),
+        code.get('ver', '').ljust(8, ' '),
+        str(code.get('validator', ''))[11:-1].ljust(25, ' ')]
     if 'modulates' in code:
         data.append(f'modulates={code["modulates"]}')
 
-    printer(' '.join(data))
+    printer('\t'.join(data))
 
 
 def print_codes_in_path(path, search, filters, printer=print):
