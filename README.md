@@ -1,6 +1,6 @@
 Linter and parser for .sfz files
 
-Unfinished, expect bugs
+CLI programs are mostly done.
 
 Includes the `sfzlint` and `sfzlist` command line utilities
 `sfzlint` will parse and validate sfzfiles. If a directory is passed it will be recursivly searched for sfz files.
@@ -24,7 +24,8 @@ Includes the `sfzlint` and `sfzlist` command line utilities
 
 * syntax validation
 * checks opcodes against known opcodes on sfzformat.com
-* validates opcode values
+* validates opcode values when min or max or type are defined in the spec
+* validates `*_curvecc` values above 7 have a corresponding `<curve>` header
 * checks that sample files exists, also checks that case matches for portability with case-sensitive filesystems
 * pulls in #includes and replaces vars from #defines
 
@@ -34,8 +35,8 @@ This may be useful to some people. I've also included the `sfz.lark` file.
 The SFZ file format definition is vague. I had to make some assumptions. For example I assumed unquoted paths
 cannot include newlines or `=`. Also I assume opcodes and note names are always lowercase.
 
-    from sfzlint.parser import parser
-    lark_tree = parser().parse(sfz_string)
+    from sfzlint import parser
+    lark_tree = parser.parse(sfz_string)
 
 Opcode data is from [sfzformat.com](https://sfzformat.com/). If you see a bug in `syntax.yml` consider putting you PR
 against [the source](https://github.com/sfzformat/sfzformat.github.io/blob/source/_data/sfz/syntax.yml)

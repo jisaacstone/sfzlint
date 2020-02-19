@@ -96,14 +96,15 @@ class SFZValidator(Transformer):
     '''Turns the generated syntax tree into an instance of SFZ'''
     default_config = {
         'warn_undefined_var': False,
+        'validate': True,
     }
 
     def _err(self, msg, token):
-        if self.err_cb:
+        if self.err_cb and self.config.get('validate'):
             self.err_cb('ERR', msg, token, self.config.get('file_path'))
 
     def _warn(self, msg, token):
-        if self.err_cb:
+        if self.err_cb and self.config.get('validate'):
             self.err_cb('WARN', msg, token, self.config.get('file_path'))
 
     def __init__(self, err_cb=None, config=None, *args, **kwargs):
@@ -117,7 +118,8 @@ class SFZValidator(Transformer):
 
     def header(self, items):
         header = Header(items[0])
-        self._validate_header(header)
+        if self.config.get('validate'):
+            self._validate_header(header)
         try:
             self.sfz.headers.append(header)
             self.current_header = header
@@ -149,16 +151,20 @@ class SFZValidator(Transformer):
         if not path.is_file():
             self._err('could not load include, file not found', rel_path)
         else:
-            old_file = self.config['file_path']
-            self.config['file_path'] = path
+            old_conf = self.config
+            self.config = ChainMap(
+                {'file_path': path, 'validate': False},
+                self.config)
             try:
                 with path.open() as fob:
-                    contents = fob.read() + '\n'
-                    tree = parser().parse(contents)
+                    contents = fob.read()
+                    tree = parse(contents)
                     self.transform(tree)
             except Exception as e:
+                self.config = old_conf
                 self._err(f'error loading include, {e}', rel_path)
-            self.config['file_path'] = old_file
+            else:
+                self.config = old_conf
 
     def _validate_header(self, header):
         if self.config.get('spec_versions'):
@@ -181,6 +187,9 @@ class SFZValidator(Transformer):
         opcode = update_token(opcode, opcode.lower())
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
+        if not self.config.get('validate'):
+            return
+
         if 'curvecc' in opcode:
             self._curveccs.append((opcode, token))
         else:
@@ -202,7 +211,7 @@ class SFZValidator(Transformer):
 
     def _sanitize_token(self, token):
         if token[0] == '"' and token[-1] == '"':
-            # qoated string
+            # quoated string
             return update_token(token, token[1:-1])
         elif token[0] == '$':
             # defined variable
@@ -235,6 +244,10 @@ def parser(_singleton=[]):
     return _singleton[0]
 
 
+def parse(sfz_string):
+    return parser().parse(sfz_string + '\n')
+
+
 def validate(file_path, *args, **kwargs):
     with open(file_path, 'r') as fob:
         # can't use the file stream because the lexer calls len()
@@ -243,7 +256,7 @@ def validate(file_path, *args, **kwargs):
 
 
 def validate_s(string, *args, **kwargs):
-    tree = parser().parse(string + '\n')
+    tree = parse(string + '\n')
     validator = SFZValidator(*args, **kwargs)
     transformed = validator.transform(tree)
     return transformed
