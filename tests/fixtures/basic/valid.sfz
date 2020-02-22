@@ -49,7 +49,7 @@ pitch_keycenter=$pitch_keycenter
 amp_velcurve_102=1
 
 <region>
-sample=arco\arco_c1_ff_down.wav
+sample=*sine
 lokey=12
 hikey=24
 lovel=125

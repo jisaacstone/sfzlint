@@ -48,6 +48,15 @@ class TestValid(TestCase):
         self.assertEqual('sample', k)
         self.assertEqual('example.wav', v)
 
+    def test_silence(self):
+        sfz = self._parse(
+            '''
+            <region>
+            sample=*silence
+            ''')
+        region, = sfz.headers
+        self.assertEqual(region['sample'], '*silence')
+
     def test_string(self):
         sfz = self._parse(
             '''

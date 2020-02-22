@@ -42,6 +42,8 @@ class TuneValidator(validators.Validator):
 
 class SampleValidator(validators.Validator):
     def validate(self, token, config, *args):
+        if token[0] == '*': # built-in *sine, *square, etc sounds
+            return
         file_path = config.get('file_path')
         if not file_path:
             return

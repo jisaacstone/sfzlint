@@ -2,4 +2,3 @@ add script to pull latest .yml, delete .pickle caches
 preprocessor setep to pull in inculde and replace defines
 create a release on GH, get up on pypi
 don't report seeors in #includes
-handle '*noise', etc samples
