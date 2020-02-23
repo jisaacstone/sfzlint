@@ -105,3 +105,18 @@ class TestInvalid(TestCase):
         self.assertEqual(sfz.headers[0]['amplitude_curvecc110'], 19)
         (_sev, _, token, _), = errs
         self.assertEqual(token, 19)
+
+    def test_vN_too_high(self):
+        sfz, errs = self._parse(
+            '''
+            <region>
+            amplitude_oncc110=100
+            amplitude_curvecc110=9
+
+            <curve>curve_index=9
+            v000=0
+            v063=0
+            v227=1
+            ''')
+        (_sev, _, token, _), = errs
+        self.assertEqual(token, 'vN')

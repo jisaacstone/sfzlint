@@ -412,6 +412,8 @@ categories:
     short_description:
       "Determines whether a parameter is modulated by addition or multiplication."
     version: "ARIA"
+    see_also:
+    - "varNN_mod"
 
   - name: "set_hdccN"
     short_description:
@@ -484,6 +486,10 @@ categories:
     value:
       type_name: "string"
       default: "null"
+    see_also:
+    - "master_label"
+    - "group_label"
+    - "region_label"
 
   - name: "master_label"
     short_description:
@@ -493,6 +499,10 @@ categories:
     value:
       type_name: "string"
       default: "null"
+    see_also:
+    - "global_label"
+    - "group_label"
+    - "region_label"
 
   - name: "group_label"
     short_description:
@@ -502,6 +512,10 @@ categories:
     value:
       type_name: "string"
       default: "null"
+    see_also:
+    - "master_label"
+    - "global_label"
+    - "region_label"
 
   - name: "region_label"
     short_description:
@@ -511,6 +525,10 @@ categories:
     value:
       type_name: "string"
       default: "null"
+    see_also:
+    - "master_label"
+    - "global_label"
+    - "group_label"
 
   types:
   - name: "Voice Lifecycle"
@@ -615,6 +633,9 @@ categories:
       version: "ARIA"
       value:
         type_name: "float"
+      see_also:
+      - "off_shape"
+      - "off_time"
 
     - name: "off_shape"
       short_description:
@@ -624,6 +645,9 @@ categories:
       version: "ARIA"
       value:
         type_name: "float"
+      see_also:
+      - "off_curve"
+      - "off_time"
 
     - name: "off_time"
       short_description:
@@ -632,6 +656,9 @@ categories:
       version: "ARIA"
       value:
         type_name: "float"
+      see_also:
+      - "off_curve"
+      - "off_shape"
 
     - name: "polyphony_group"
       short_description:
@@ -948,12 +975,6 @@ categories:
         min: 0
         max: 127
 
-    - name: "varNN_curveccX"
-      short_description:
-        "Specifies the ‹<a href='/headers/curve'>curve</a>› number
-        which MIDI CC X uses to modulate variable NN."
-      version: "ARIA"
-
     - name: "varNN_mod"
       short_description:
         "Specifies the method used to calculate variable number NN from MIDI CCs."
@@ -965,20 +986,29 @@ categories:
           description:
             "Multiplication, with 1 being full scale, 0 at a CC value of 0,
             and 1 at CC value of 127. This is how the amplitude opcode works."
-
         - name: "add"
           description:
             "Addition, how volume, cutoff and all other modulation destinations
             work by default when modulated."
-
-    - name: "varNN_onccX"
-      short_description:
-        "Specifies the method used to calculate variable number NN from MIDI CCs."
-      version: "ARIA"
-      value:
-        type_name: "float"
-        min: 0
-        max: 1
+      modulation:
+        midi_cc:
+        - name: "varNN_onccX"
+          short_description:
+            "Specifies the method used to calculate variable number NN from MIDI CCs."
+          version: "ARIA"
+          value:
+            type_name: "float"
+            min: 0
+            max: 1
+        - name: "varNN_curveccX"
+          short_description:
+            "Specifies the ‹<a href='/headers/curve'>curve</a>› number
+            which MIDI CC X uses to modulate variable NN."
+          version: "ARIA"
+          value:
+            type_name: "integer"
+            min: 0
+            max: 255
 
     - name: "varNN_target"
       short_description: "Specifies the target for variable NN to modulate."
@@ -987,8 +1017,10 @@ categories:
         type_name: "string"
         options:
         - name: "amplitude"
+        - name: "bitred"
         - name: "cutoff"
         - name: "cutoff2"
+        - name: "decim"
         - name: "eqNbw"
         - name: "eqNfreq"
         - name: "eqNgain"
@@ -1159,7 +1191,7 @@ categories:
             "Region will play on note-off. The velocity used to play
             the note-off sample is the velocity value of the corresponding
             (previous) note-on message. Ignores sustain pedal."
-          version: "SFZ v2"
+          version: "ARIA"
 
     - name: "on_loccN"
       short_description:
@@ -1265,6 +1297,10 @@ categories:
             version: "ARIA"
         - name: "pan_curveccN"
           version: "Cakewalk"
+          value:
+            type_name: "integer"
+            min: 0
+            max: 255
         - name: "pan_smoothccN"
           version: "Cakewalk"
         - name: "pan_stepccN"
@@ -1313,6 +1349,10 @@ categories:
             unit: "dB"
         - name: "volume_curveccN"
           version: "ARIA"
+          value:
+            type_name: "integer"
+            min: 0
+            max: 255
         - name: "volume_smoothccN"
           version: "ARIA"
         - name: "volume_stepccN"
@@ -1337,6 +1377,10 @@ categories:
           version: "Cakewalk"
         - name: "width_curveccN"
           version: "Cakewalk"
+          value:
+            type_name: "integer"
+            min: 0
+            max: 255
         - name: "width_smoothccN"
           version: "Cakewalk"
         - name: "width_stepccN"
@@ -1622,6 +1666,10 @@ categories:
             unit: "%"
         - name: "amplitude_curveccN"
           version: "ARIA"
+          value:
+            type_name: "integer"
+            min: 0
+            max: 255
         - name: "amplitude_smoothccN"
           version: "ARIA"
 
@@ -1885,9 +1933,8 @@ categories:
           version: "SFZ v2"
           value:
             type_name: "integer"
-            default: 0
-            min: -9600
-            max: 9600
+            min: 0
+            max: 255
             unit: "cents"
         - name: "cutoff_smoothccN"
           version: "SFZ v2"
@@ -1978,59 +2025,57 @@ categories:
           description: "Two-pole band pass filter (12dB/octave)"
         - name: "brf_2p"
           description: "Two-pole band rejection filter (12dB/octave)"
-
-# TODO: Uncomment once the options will be handled
-#       - name: "bpf_1p"
-#         description: "One-pole band pass filter (6dB/octave)"
-#         version: "SFZ v2"
-#       - name: "brf_1p"
-#         description: "One-pole band rejection filter (6dB/octave)"
-#         version: "SFZ v2"
-#       - name: "apf_1p"
-#         description: "One-pole all pass filter (6dB/octave)"
-#         version: "SFZ v2"
-#       - name: "lpf_2p_sv"
-#         description: "Two-pole low pass filter (12dB/octave) state variable"
-#         version: "SFZ v2"
-#       - name: "hpf_2p_sv"
-#         description: "Two-pole high pass filter (12dB/octave) state variable"
-#         version: "SFZ v2"
-#       - name: "bpf_2p_sv"
-#         description: "Two-pole band pass filter (12dB/octave) state variable"
-#         version: "SFZ v2"
-#       - name: "brf_2p_sv"
-#         description: "Two-pole band rejection filter (12dB/octave) state variable"
-#         version: "SFZ v2"
-#       - name: "pkf_2p"
-#         description: "Two-pole peak filter (12dB/octave)"
-#         version: "SFZ v2"
-#       - name: "lpf_4p"
-#         description: "Four-pole low pass filter (24dB/octave)"
-#         version: "SFZ v2"
-#       - name: "hpf_4p"
-#         description: "Four-pole high pass filter (24dB/octave)"
-#         version: "SFZ v2"
-#       - name: "lpf_6p"
-#         description: "Six-pole low pass filter (36dB/octave)"
-#         version: "SFZ v2"
-#       - name: "hpf_6p"
-#         description: "Six-pole high pass filter (36dB/octave)"
-#         version: "SFZ v2"
-#       - name: "comb"
-#         description: "Comb filter"
-#         version: "SFZ v2"
-#       - name: "pink"
-#         description: "Pink filter"
-#         version: "SFZ v2"
-#       - name: "lsh"
-#         description: "Low shelf"
-#         version: "SFZ v2"
-#       - name: "hsh"
-#         description: "High shelf"
-#         version: "SFZ v2"
-#       - name: "peq"
-#         description: "Parametric EQ"
-#         version: "SFZ v2"
+        - name: "bpf_1p"
+          description: "One-pole band pass filter (6dB/octave)"
+          version: "SFZ v2"
+        - name: "brf_1p"
+          description: "One-pole band rejection filter (6dB/octave)"
+          version: "SFZ v2"
+        - name: "apf_1p"
+          description: "One-pole all pass filter (6dB/octave)"
+          version: "SFZ v2"
+        - name: "lpf_2p_sv"
+          description: "Two-pole low pass filter (12dB/octave) state variable"
+          version: "SFZ v2"
+        - name: "hpf_2p_sv"
+          description: "Two-pole high pass filter (12dB/octave) state variable"
+          version: "SFZ v2"
+        - name: "bpf_2p_sv"
+          description: "Two-pole band pass filter (12dB/octave) state variable"
+          version: "SFZ v2"
+        - name: "brf_2p_sv"
+          description: "Two-pole band rejection filter (12dB/octave) state variable"
+          version: "SFZ v2"
+        - name: "pkf_2p"
+          description: "Two-pole peak filter (12dB/octave)"
+          version: "SFZ v2"
+        - name: "lpf_4p"
+          description: "Four-pole low pass filter (24dB/octave)"
+          version: "SFZ v2"
+        - name: "hpf_4p"
+          description: "Four-pole high pass filter (24dB/octave)"
+          version: "SFZ v2"
+        - name: "lpf_6p"
+          description: "Six-pole low pass filter (36dB/octave)"
+          version: "SFZ v2"
+        - name: "hpf_6p"
+          description: "Six-pole high pass filter (36dB/octave)"
+          version: "SFZ v2"
+        - name: "comb"
+          description: "Comb filter"
+          version: "SFZ v2"
+        - name: "pink"
+          description: "Pink filter"
+          version: "SFZ v2"
+        - name: "lsh"
+          description: "Low shelf"
+          version: "ARIA"
+        - name: "hsh"
+          description: "High shelf"
+          version: "ARIA"
+        - name: "peq"
+          description: "Parametric EQ"
+          version: "ARIA"
 
     - name: "fil_gain"
       short_description: "Gain for lsh, hsh and peq filter types."
@@ -2084,11 +2129,9 @@ categories:
         - name: "resonance_curveccN"
           version: "SFZ v2"
           value:
-            type_name: "float"
-            default: 0
+            type_name: "integer"
             min: 0
-            max: 40
-            unit: "dB"
+            max: 255
         - name: "resonance_smoothccN"
           version: "SFZ v2"
           value:
@@ -2136,10 +2179,8 @@ categories:
           version: "SFZ v2"
           value:
             type_name: "integer"
-            default: 0
-            min: -9600
-            max: 9600
-            unit: "cents"
+            min: 0
+            max: 255
         - name: "cutoff2_smoothccN"
           version: "SFZ v2"
           value:
@@ -2266,11 +2307,9 @@ categories:
         - name: "resonance2_curveccN"
           version: "SFZ v2"
           value:
-            type_name: "float"
-            default: 0
+            type_name: "integer"
             min: 0
-            max: 40
-            unit: "dB"
+            max: 255
         - name: "resonance2_smoothccN"
           version: "SFZ v2"
           value:
@@ -2455,9 +2494,10 @@ categories:
           alias:
           - name: "tune_curveccN"
             version: "ARIA"
-            value:
-              min: -100
-              max: 100
+          value:
+            type_name: "integer"
+            min: 0
+            max: 255
         - name: "pitch_smoothccN"
           version: "SFZ v2"
           alias:
@@ -2562,7 +2602,7 @@ categories:
   short_description: "Modulation opcodes comprise of all the LFO and EG controls."
   types:
   - name: "Envelope Generators"
-    url: "/types/envelope_generators"
+    url: "/modulations/envelope_generators"
     opcodes:
     - name: "ampeg_attack"
       short_description: "EG attack time."
@@ -2618,6 +2658,11 @@ categories:
           alias:
           - name: "ampeg_decay_onccN"
             version: "SFZ v2"
+        - name: "ampeg_decay_curveccN"
+          value:
+            type_name: "integer"
+            min: 0
+            max: 255
         velocity:
         - name: "ampeg_vel2decay"
           short_description: "Velocity effect on pitch EG decay time."
@@ -2684,6 +2729,11 @@ categories:
           alias:
           - name: "ampeg_hold_onccN"
             version: "SFZ v2"
+        - name: "ampeg_hole_curveccN"
+          value:
+            type_name: "integer"
+            min: 0
+            max: 255
         velocity:
         - name: "ampeg_vel2hold"
           short_description: "Velocity effect on EG hold time."
@@ -2750,6 +2800,11 @@ categories:
             min: -100
             max: 100
             unit: "%"
+        - name: "ampeg_sustain_curveccN"
+          value:
+            type_name: "integer"
+            min: 0
+            max: 255
         velocity:
         - name: "ampeg_vel2sustain"
           short_description: "Velocity effect on EG sustain level, in percentage."
@@ -3644,7 +3699,7 @@ categories:
           version: "Cakewalk SFZ v2"
 
   - name: "LFO"
-    url: "/types/lfo"
+    url: "/modulations/lfo"
     short_description: "Low Frequency Oscillator."
     opcodes:
     - name: "amplfo_delay"
@@ -3977,6 +4032,13 @@ categories:
           version: "SFZ v2"
         - name: "lfoN_freq_stepccX"
           version: "SFZ v2"
+      see_also:
+      - "lfoN_delay"
+      - "lfoN_fade"
+      - "lfoN_offset"
+      - "lfoN_ratio"
+      - "lfoN_scale"
+      - "lfoN_wave"
 
     - name: "lfoN_delay"
       short_description: "Onset delay for LFO number N."
@@ -3990,6 +4052,13 @@ categories:
         midi_cc:
         - name: "lfoN_delay_onccX"
           version: "SFZ v2"
+      see_also:
+      - "lfoN_fade"
+      - "lfoN_freq"
+      - "lfoN_offset"
+      - "lfoN_ratio"
+      - "lfoN_scale"
+      - "lfoN_wave"
 
     - name: "lfoN_fade"
       short_description: "Fade-in time for LFO number N."
@@ -4002,6 +4071,13 @@ categories:
           version: "SFZ v2"
           value:
             type_name: "float"
+      see_also:
+      - "lfoN_delay"
+      - "lfoN_freq"
+      - "lfoN_offset"
+      - "lfoN_ratio"
+      - "lfoN_scale"
+      - "lfoN_wave"
 
     - name: "lfoN_phase"
       short_description: "Initial phase shift for LFO number N."
@@ -4031,6 +4107,23 @@ categories:
         midi_cc:
         - name: "lfoN_wave_onccX"
           version: "ARIA"
+      see_also:
+      - "lfoN_delay"
+      - "lfoN_fade"
+      - "lfoN_freq"
+      - "lfoN_offset"
+      - "lfoN_ratio"
+      - "lfoN_scale"
+
+    - name: "lfoN_waveX"
+      short_description:
+        "Select the waveform type used for the waveform number X (max 8)
+        for LFO number N, with the same allowed values as
+        <a href='/opcodes/lfoN_wave'>lfoN_wave</a> normally can use."
+      version: "ARIA"
+      value:
+        type_name: "integer"
+        default: 1
 
     - name: "lfoN_steps"
       short_description: ""
@@ -4117,6 +4210,11 @@ categories:
       version: "SFZ v2"
       modulation:
         midi_cc:
+        - name: "lfoN_picth_curveccN"
+          value:
+            type_name: "integer"
+            min: 0
+            max: 255
         - name: "lfoN_pitch_onccX"
           version: "SFZ v2"
         - name: "lfoN_pitch_smoothccX"
@@ -4322,37 +4420,53 @@ categories:
           short_description: ""
           version: "Cakewalk SFZ v2"
 
-    - name: "lfoN_offsetX"
+    - name: "lfoN_offset"
       short_description:
-        "Offset for LFO number N,
-        can also be used with sub waveforms with lfoN_offset2, lfoN_offset3 etc."
+        "DC offset - Add to LFO output; not affected by scale."
+      alias:
+      - name: "lfoN_offsetX"
       version: "ARIA"
       value:
         type_name: "float"
+      see_also:
+      - "lfoN_delay"
+      - "lfoN_fade"
+      - "lfoN_freq"
+      - "lfoN_ratio"
+      - "lfoN_scale"
+      - "lfoN_wave"
 
     - name: "lfoN_ratio"
       short_description:
         "Sets the ratio between the specified sub waveform and the main waveform."
+      alias:
+      - name: "lfoN_ratioX"
       version: "ARIA"
       value:
         type_name: "float"
+      see_also:
+      - "lfoN_delay"
+      - "lfoN_fade"
+      - "lfoN_freq"
+      - "lfoN_offset"
+      - "lfoN_scale"
+      - "lfoN_wave"
 
     - name: "lfoN_scale"
       short_description:
         "Sets the scaling between the specified sub waveform and the main waveform."
+      alias:
+      - name: "lfoN_scaleX"
       version: "ARIA"
       value:
         type_name: "float"
-
-    - name: "lfoN_wave2"
-      short_description:
-        "Select the waveform type used for the second waveform for LFO number N,
-        with the same allowed values as
-        <a href='/opcodes/lfoN_wave'>lfoN_wave</a> normally can use."
-      version: "ARIA"
-      value:
-        type_name: "integer"
-        default: 1
+      see_also:
+      - "lfoN_delay"
+      - "lfoN_fade"
+      - "lfoN_freq"
+      - "lfoN_offset"
+      - "lfoN_ratio"
+      - "lfoN_wave"
 
 - name: "Curves"
   opcodes:
@@ -4362,7 +4476,7 @@ categories:
     value:
       type_name: "integer"
       min: 0
-      max: "N/A"
+      max: 255
 
   - name: "vN"
     short_description: ""
@@ -4378,6 +4492,28 @@ categories:
 
 - name: "Effects"
   opcodes:
+  - name: "bus"
+    version: "SFZ v2"
+    short_description:
+      "The target bus for the effect."
+    value:
+      type_name: "string"
+      options:
+      - name: "aux1"
+      - name: "aux2"
+      - name: "aux3"
+      - name: "aux4"
+      - name: "aux5"
+      - name: "aux6"
+      - name: "aux7"
+      - name: "aux8"
+      - name: "fx1"
+      - name: "fx2"
+      - name: "fx3"
+      - name: "fx4"
+      - name: "midi"
+        version: "ARIA"
+
   - name: "effect1"
     short_description:
       "Level of effect1 send, in percentage (reverb in Cakewalk sfz)."
@@ -4406,6 +4542,32 @@ categories:
     version: "SFZ v2"
     value:
       type_name: "string"
+      options:
+      - name: "am"
+      - name: "autopan"
+      - name: "bitred"
+      - name: "buffer"
+      - name: "comp"
+      - name: "decim"
+      - name: "delay"
+      - name: "distorsion"
+      - name: "eq"
+      - name: "filter"
+      - name: "fm"
+      - name: "fverb"
+      - name: "gain"
+      - name: "gate"
+      - name: "limiter"
+      - name: "mixer"
+      - name: "octaver"
+      - name: "phaser"
+      - name: "rectify"
+      - name: "resonator"
+      - name: "ringmod"
+      - name: "static"
+      - name: "strings"
+      - name: "tdfir"
+      - name: "width"
 
   - name: "param_offset"
     short_description:

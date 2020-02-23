@@ -10,6 +10,7 @@ from . import validators
 
 
 ver_mapping = {
+    None: 'unknown',
     'SFZ v1': 'v1',
     'SFZ v2': 'v2',
     'ARIA': 'aria',
@@ -33,25 +34,28 @@ def listdir(path):
 
 # special-purpose validators
 class TuneValidator(validators.Validator):
-    def validate(self, token, config, *args):
+    def validate(self, value, config, *args):
         spec_versions = config.get('spec_versions')
         if not spec_versions or 'aria' in spec_versions:
-            return validators.Range(-2400, 2400).validate(token)
-        return validators.Range(-100, 100).validate(token)
+            return validators.Range(-2400, 2400).validate(value)
+        return validators.Range(-100, 100).validate(value)
 
 
 class SampleValidator(validators.Validator):
-    def validate(self, token, config, *args):
-        if token[0] == '*': # built-in *sine, *square, etc sounds
-            return
-        file_path = config.get('file_path')
-        if not file_path:
-            return
-        relpath = Path(token.replace('\\', '/'))
+    def validate(self, value, config, *args):
+        try:
+            if value[0] == '*':  # built-in *sine, *square, etc sounds
+                return
+            file_path = config.get('file_path')
+            if not file_path:
+                return
+            relpath = Path(value.replace('\\', '/'))
+        except TypeError:
+            return f'not a valid path "{value}"'
         try:
             resolved = (Path(file_path).parent / relpath).resolve(strict=True)
         except FileNotFoundError:
-            return f'file not found "{token}"'
+            return f'file not found "{value}"'
 
         parts = reversed(relpath.parts)
         for part in parts:
@@ -59,47 +63,49 @@ class SampleValidator(validators.Validator):
                 break
             resolved = resolved.parent
             if part not in listdir(resolved):
-                return f'case does not match file for "{token}"'
+                return f'case does not match file for "{value}"'
 
 
 class CurveCCValidator(validators.Validator):
-    def validate(self, token, config, *args):
-        if token.value < 0:
+    def validate(self, value, config, *args):
+        if value < 0:
             return 'negative curve_index'
-        if token.value < 7:
+        if value < 7:
             # likely a default or built-in curve, no check
             return
         sfz = config.get('sfz')
-        if sfz and token.value not in sfz.curves:
+        if sfz and value not in sfz.curves:
             return 'no corresponding curve_index found'
 
 
 overrides = {
-    'tune': {'validator': TuneValidator()},
-    'sample': {'validator': SampleValidator()},
-    'varNN_target': {'type': object},
-    '*_mod': {'validator': validators.TargetValidator(validators.Choice(
+    ('tune', 'value', 'validator'): TuneValidator(),
+    ('sample', 'value', 'validator'): SampleValidator(),
+    ('varNN_target', 'value',  'type'): object,
+    ('*_mod', 'target'): {'validator': validators.Choice(
         ('delay', 'delay_beats', 'stop_beats', 'offset', 'pitch',
          'tune', 'volume', 'amplitude', 'cutoff', 'resonance',
          'fil_gain', 'cutoff2', 'resonance2', 'fil2_gain', 'pan',
-         'position', 'width', 'bitred', 'decim')))},
+         'position', 'width', 'bitred', 'decim'))},
     # if a label is parsed as an int by the lexer that is OK
-    'label_ccN': {'type': object},
-    'global_label': {'type': object},
-    'master_label': {'type': object},
-    'group_label': {'type': object},
-    'region_label': {'type': object},
-    'sw_label': {'type': object},
+    ('label_ccN', 'value', 'type'): object,
+    ('global_label', 'value', 'type'): object,
+    ('master_label', 'value', 'type'): object,
+    ('group_label', 'value', 'type'): object,
+    ('region_label', 'value', 'type'): object,
+    ('sw_label', 'value', 'type'): object,
 }
 
 
 def _override(ops):
-    for k, override in overrides.items():
-        for o_key, o_val in override.items():
-            ops[k][o_key] = o_val
+    for keys, override in overrides.items():
+        opp = ops
+        for key in keys[:-1]:
+            opp = opp[key]
+        opp[keys[-1]] = override
+
     # the choices in the yml are 'target' choices not value choices
-    ops['varNN_target']['validator'] = validators.TargetValidator(
-        ops['varNN_target']['validator'])
+    ops['varNN_target']['target'] = ops['varNN_target'].pop('value')
     return ops
 
 
@@ -136,20 +142,15 @@ def _iter_ops(opcodes):
 def op_to_validator(op_data, **kwargs):
     valid_meta = dict(
         name=op_data['name'],
-        ver=ver_mapping[op_data['version']],
+        ver=ver_mapping[op_data.get('version')],
         **kwargs)
-    data_value = op_data.get('value')
-    if data_value:
-        if 'type_name' in data_value:
-            valid_meta['type'] = type_mapping[data_value['type_name']]
-        valid_meta['validator'] = _validator(data_value)
-    else:
-        valid_meta['validator'] = validators.Any()
+    _extract_vdr_meta(op_data, valid_meta)
     yield valid_meta
     for alias in op_data.get('alias', []):
         alias_meta = {
-            'validator': validators.Alias(op_data['name']),
-            'name': alias['name']}
+            'name': alias['name'],
+            'value': {'validator': validators.Alias(op_data['name'])},
+        }
         if 'version' in alias:
             alias_meta['ver'] = ver_mapping[alias['version']]
         else:
@@ -161,6 +162,17 @@ def op_to_validator(op_data, **kwargs):
                 for mod in modulations:
                     yield from op_to_validator(
                         mod, modulates=op_data['name'], mod_type=mod_type)
+
+
+def _extract_vdr_meta(op_data, valid_meta):
+    for v_key in ('value', 'index'):
+        if v_key in op_data:
+            if v_key not in valid_meta:
+                valid_meta[v_key] = {}
+            valid_meta[v_key]['validator'] = _validator(op_data[v_key])
+            if 'type' in op_data[v_key]:
+                valid_meta[v_key]['type'] = type_mapping[
+                    op_data[v_key]['type_name']]
 
 
 def _validator(data_value):

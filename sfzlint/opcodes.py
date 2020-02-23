@@ -26,6 +26,12 @@ class OpcodeIntRepl:
         opcode = instance._handle_special_cases(opcode, token)
         return opcode, instance.subs
 
+    @classmethod
+    def sub_str(cls, string):
+        instance = cls(string)
+        opcode = re.sub(cls.re, instance, string)
+        return opcode
+
     def _handle_special_cases(self, opcode, token):
         # order matters here
         if opcode.startswith('varN'):
@@ -78,8 +84,8 @@ class OpcodeIntRepl:
 
 
 def _validate_cc_value(cc_value, token):
-    # 0-127 are standard, 128-137 in sfz v2, 140-142 in aria
-    if cc_value > 137 and cc_value not in {140, 141, 142}:
+    # 0-127 are standard, 128-137 in sfz v2, 140-155 in aria
+    if cc_value > 155:
         raise ValidationWarning(
             f'{cc_value} is not a valid control code', token)
 
@@ -109,7 +115,7 @@ def validate_curvecc(raw_opcode, token, config):
                 f'opcode spec {validation["ver"]} is not one of {spec_ver}',
                 raw_opcode)
 
-    err_msg = spec.CurveCCValidator().validate(token, config)
+    err_msg = spec.CurveCCValidator().validate(token.value, config)
     if err_msg:
         msg = f'{err_msg} ({opcode})'
         raise ValidationWarning(msg, token)
@@ -137,32 +143,42 @@ def validate_opcode_expr(raw_opcode, token, config):
                     f'undocumented alias of {new_opcode} ({opcode})',
                     raw_opcode)
     try:
-        validation = spec.opcodes[opcode]
+        op_meta = spec.opcodes[opcode]
     except KeyError:
         raise ValidationWarning(
             f'unknown opcode ({opcode})',
             raw_opcode)
 
-    v_type = validation.get('type')
-    if v_type and not isinstance(token.value, v_type):
-        raise ValidationError(
-            f'expected {typenames[v_type]} got {token.value} ({opcode})',
-            token)
     spec_versions = config.get('spec_versions')
-    if spec_versions and validation['ver'] not in spec_versions:
+    if spec_versions and op_meta['ver'] not in spec_versions:
         raise ValidationError(
-            f'opcode spec {validation["ver"]} is not one of {spec_versions}',
+            f'opcode spec {op_meta["ver"]} is not one of {spec_versions}',
             raw_opcode)
-    if validation['ver'] == 'cakewalk_v2' and (
-            not spec_versions or validation['ver'] not in spec_versions):
+    if op_meta['ver'] == 'cakewalk_v2' and (
+            not spec_versions or op_meta['ver'] not in spec_versions):
         raise ValidationWarning(
             'cakewalk v2 opcodes are not implemented by any player',
             raw_opcode)
 
-    err_msg = validation['validator'].validate(token, config, subs)
-    if err_msg:
-        msg = f'{err_msg} ({opcode})'
-        raise ValidationWarning(msg, token)
+    if 'value' in op_meta:
+        validation = op_meta['value']
+        v_type = validation.get('type')
+        if v_type and not isinstance(token.value, v_type):
+            raise ValidationError(
+                f'expected {typenames[v_type]} got {token.value} ({opcode})',
+                token)
+        err_msg = validation['validator'].validate(token.value, config)
+        if err_msg:
+            msg = f'{err_msg} ({opcode})'
+            raise ValidationWarning(msg, token)
+
+    for meta_k, sub_k in (('index', 'N'), ('target', 'target')):
+        if meta_k in op_meta:
+            err_msg = op_meta[meta_k]['validator'].validate(
+                subs[sub_k], config)
+            if err_msg:
+                msg = f'{err_msg} ({opcode})'
+                raise ValidationWarning(msg, opcode)
 
 
 typenames = {
