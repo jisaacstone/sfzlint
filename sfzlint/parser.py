@@ -101,11 +101,13 @@ class SFZValidator(Transformer):
 
     def _err(self, msg, token):
         if self.err_cb and self.config.get('validate'):
-            self.err_cb('ERR', msg, token, self.config.get('file_path'))
+            fn = self.config.get('file_name', self.config.get('file_path'))
+            self.err_cb('ERR', msg, token, fn)
 
     def _warn(self, msg, token):
         if self.err_cb and self.config.get('validate'):
-            self.err_cb('WARN', msg, token, self.config.get('file_path'))
+            fn = self.config.get('file_name', self.config.get('file_path'))
+            self.err_cb('WARN', msg, token, fn)
 
     def __init__(self, err_cb=None, config=None, *args, **kwargs):
         self.config = ChainMap(config or {}, self.default_config)
@@ -143,7 +145,8 @@ class SFZValidator(Transformer):
         self._validate_opcode(opcode, value)
 
     def start(self, items):
-        self._validate_curvecc()  # must be at the end
+        if self.config.get('check_curvecc', True):
+            self._validate_curvecc()  # must be at the end
         return self.sfz
 
     def _load_include(self, rel_path):
@@ -153,7 +156,9 @@ class SFZValidator(Transformer):
         else:
             old_conf = self.config
             self.config = ChainMap(
-                {'file_path': path, 'validate': False},
+                {'validate': self.config.get('check_includes'),
+                 'file_name': path,
+                 'check_curvecc': False},
                 self.config)
             try:
                 with path.open() as fob:

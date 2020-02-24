@@ -39,6 +39,7 @@ def lint(options):
         config = {
             'spec_versions': spec_versions,
             'file_path': filename,
+            'check_includes': options.check_includes,
         }
         lint_file(filename, config=config)
 
@@ -66,6 +67,10 @@ def main():
         nargs='*',
         choices=tuple(spec.ver_mapping.values()),
         help='sfz spec to validate against')
+    parser.add_argument(
+        '-i', '--check-includes',
+        action='store_true',
+        help='read and check any #include files as well')
     args = parser.parse_args()
     lint(args)
 

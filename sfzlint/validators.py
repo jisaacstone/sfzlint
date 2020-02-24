@@ -50,7 +50,7 @@ class Choice(Validator):
 
     def validate(self, value, *args):
         if value not in self.choices:
-            subbed, _ = opcodes.OpcodeIntRepl.sub_str(value)
+            subbed = opcodes.OpcodeIntRepl.sub_str(value)
             if subbed not in self.choices:
                 return f'{value} not one of {self.choices}'
 
@@ -60,8 +60,9 @@ class Alias(Validator):
         self.name = name
 
     def validate(self, value, *args):
-        return spec.opcodes[self.name]['value']['validator'].validate(
-            value, *args)
+        opc = spec.opcodes[self.name].get('value')
+        if opc and 'validator' in opc:
+            return opc['validator'].validate(value, *args)
 
     def __str__(self):
         return f'<Validator.Alias({self.name})>'

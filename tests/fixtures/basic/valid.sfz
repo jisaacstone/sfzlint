@@ -38,7 +38,7 @@ bend_down=-600
 ampeg_release=0.600
 
 <region>
-sample=arco\arco_c1_mf_up.wav
+sample=arco/arco_c1_mf_up.wav  // windows file paths
 lokey=12
 hikey=24
 lovel=60
