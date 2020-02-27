@@ -109,7 +109,7 @@ def validate_curvecc(raw_opcode, token, config):
     known_op = opcode in spec.opcodes
     if known_op:
         validation = spec.opcodes[opcode]
-        spec_ver = config.get('spec_versions')
+        spec_ver = config.spec_versions
         if spec_ver and validation['ver'] not in spec_ver:
             raise ValidationError(
                 f'opcode spec {validation["ver"]} is not one of {spec_ver}',
@@ -149,7 +149,7 @@ def validate_opcode_expr(raw_opcode, token, config):
             f'unknown opcode ({opcode})',
             raw_opcode)
 
-    spec_versions = config.get('spec_versions')
+    spec_versions = config.spec_versions
     if spec_versions and op_meta['ver'] not in spec_versions:
         raise ValidationError(
             f'opcode spec {op_meta["ver"]} is not one of {spec_versions}',

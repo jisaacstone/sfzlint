@@ -106,6 +106,14 @@ class TestSFZLint(TestCase):
                  for a in print_mock.call_args_list]
         self.assert_has_message('case does not match', calls)
 
+    @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'include/sub/relpath.sfz'),
+        '--rel-path', str(fixture_dir / 'include')])
+    def test_rel_path(self):
+        with patch('builtins.print') as print_mock:
+            sfzlint()
+        self.assertFalse(print_mock.called, print_mock.call_args_list)
+
 
 class TestSFZList(TestCase):
     @patch('sys.argv', new=['sfzlist'])

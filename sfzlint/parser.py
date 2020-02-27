@@ -92,35 +92,70 @@ class SFZ:
         return ''.join(iter_with_cutoff())
 
 
+class SFZValidatorConfig:
+    warn_undefined_var = True
+    validate = True
+    validate_curvecc = True
+    check_includes = False
+    file_name = None
+    rel_path = None
+    sfz = None
+    spec_versions = None
+
+    def __init__(self, **kwargs):
+        for kw in (
+            'warn_undefined_var',
+            'validate',
+            'validate_curvecc',
+            'file_name',
+            'check_includes',
+            'spec_versions',
+        ):
+            if kw in kwargs:
+                setattr(self, kw, kwargs[kw])
+
+        if 'file_path' in kwargs:
+            file_path = Path(kwargs['file_path'])
+            self.rel_path = file_path.parent
+            self.file_name = file_path
+        elif 'rel_path' in kwargs:
+            self.rel_path = Path(kwargs['rel_path'])
+
+    def __str__(self):
+        return f'<{self.__class__.__name__} {vars(self)}>'
+
+
 class SFZValidator(Transformer):
     '''Turns the generated syntax tree into an instance of SFZ'''
-    default_config = {
-        'warn_undefined_var': False,
-        'validate': True,
-    }
 
     def _err(self, msg, token):
-        if self.err_cb and self.config.get('validate'):
-            fn = self.config.get('file_name', self.config.get('file_path'))
+        if self.err_cb and self.config.validate:
+            fn = self.config.file_name or 'INPUT'
             self.err_cb('ERR', msg, token, fn)
 
     def _warn(self, msg, token):
-        if self.err_cb and self.config.get('validate'):
-            fn = self.config.get('file_name', self.config.get('file_path'))
+        if self.err_cb and self.config.validate:
+            fn = self.config.file_name or 'INPUT'
             self.err_cb('WARN', msg, token, fn)
 
     def __init__(self, err_cb=None, config=None, *args, **kwargs):
-        self.config = ChainMap(config or {}, self.default_config)
+        if isinstance(config, SFZValidatorConfig):
+            self.config = config
+        elif config:
+            self.config = SFZValidatorConfig(**config)
+        else:
+            self.config = SFZValidatorConfig()
+
         self.current_header = None
         self.sfz = SFZ()
-        self.config['sfz'] = self.sfz
+        self.config.sfz = self.sfz
         self.err_cb = err_cb
         self._curveccs = []
         super(SFZValidator, self).__init__(*args, **kwargs)
 
     def header(self, items):
         header = Header(items[0])
-        if self.config.get('validate'):
+        if self.config.validate:
             self._validate_header(header)
         try:
             self.sfz.headers.append(header)
@@ -136,7 +171,7 @@ class SFZValidator(Transformer):
     def include_macro(self, items):
         token, = items
         sanitized = self._sanitize_token(token)
-        if self.config.get('file_path'):
+        if self.config.rel_path:
             self._load_include(sanitized)
         self.sfz.includes.append(sanitized)
 
@@ -145,21 +180,21 @@ class SFZValidator(Transformer):
         self._validate_opcode(opcode, value)
 
     def start(self, items):
-        if self.config.get('check_curvecc', True):
+        if self.config.validate_curvecc:
             self._validate_curvecc()  # must be at the end
         return self.sfz
 
-    def _load_include(self, rel_path):
-        path = Path(self.config['file_path']).parent / rel_path
+    def _load_include(self, inc_path):
+        path = self.config.rel_path / inc_path
         if not path.is_file():
-            self._err('could not load include, file not found', rel_path)
+            self._err('could not load include, file not found', inc_path)
         else:
             old_conf = self.config
-            self.config = ChainMap(
-                {'validate': self.config.get('check_includes'),
+            self.config = SFZValidatorConfig(**ChainMap(
+                {'validate': self.config.check_includes,
                  'file_name': path,
-                 'check_curvecc': False},
-                self.config)
+                 'validate_curvecc': False},  # all will be checked at end
+                vars(self.config)))
             try:
                 with path.open() as fob:
                     contents = fob.read()
@@ -167,15 +202,15 @@ class SFZValidator(Transformer):
                     self.transform(tree)
             except Exception as e:
                 self.config = old_conf
-                self._err(f'error loading include, {e}', rel_path)
+                self._err(f'error loading include, {e}', inc_path)
             else:
                 self.config = old_conf
 
     def _validate_header(self, header):
-        if self.config.get('spec_versions'):
-            if header.version not in self.config['spec_versions']:
+        if self.config.spec_versions:
+            if header.version not in self.config.spec_versions:
                 self._warn(f'header spec {header.version} not in '
-                           f'{self.config["spec_versions"]} ({header.token})',
+                           f'{self.config.spec_versions} ({header.token})',
                            header.token)
 
     def _validate_opcode(self, opcode, value):
@@ -192,10 +227,12 @@ class SFZValidator(Transformer):
         opcode = update_token(opcode, opcode.lower())
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
-        if not self.config.get('validate'):
+        if not self.config.validate:
             return
 
         if 'curvecc' in opcode:
+            # curveccs are validated after full file is parsed
+            # because the curve_index can appear anywhere in the file
             self._curveccs.append((opcode, token))
         else:
             try:
@@ -208,7 +245,7 @@ class SFZValidator(Transformer):
     def _varreplace(self, token):
         value = token[1:]
         if value not in self.sfz.defines:
-            if self.config['warn_undefined_var']:
+            if self.config.warn_undefined_var:
                 self._err('undefined variable', token)
             return token
         else:
@@ -261,7 +298,7 @@ def validate(file_path, *args, **kwargs):
 
 
 def validate_s(string, *args, **kwargs):
-    tree = parse(string + '\n')
+    tree = parse(string)
     validator = SFZValidator(*args, **kwargs)
     transformed = validator.transform(tree)
     return transformed

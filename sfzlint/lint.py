@@ -4,7 +4,7 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 from lark.exceptions import UnexpectedCharacters, UnexpectedToken
-from .parser import validate
+from .parser import validate, SFZValidatorConfig
 from . import spec
 
 
@@ -36,11 +36,13 @@ def lint(options):
     else:
         filenames = path,
     for filename in filenames:
-        config = {
-            'spec_versions': spec_versions,
-            'file_path': filename,
-            'check_includes': options.check_includes,
-        }
+        config = SFZValidatorConfig(
+            spec_versions=spec_versions,
+            file_path=filename,
+            check_includes=options.check_includes,
+        )
+        if options.rel_path:
+            config.rel_path = options.rel_path
         lint_file(filename, config=config)
 
 
@@ -71,6 +73,9 @@ def main():
         '-i', '--check-includes',
         action='store_true',
         help='read and check any #include files as well')
+    parser.add_argument(
+        '--rel-path',
+        help='validate includes and sample paths relative to this path')
     args = parser.parse_args()
     lint(args)
 

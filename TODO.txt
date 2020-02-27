@@ -1,3 +1,4 @@
 add script to pull latest .yml, delete .pickle caches
 preprocessor setep to pull in inculde and replace defines
+do logging and verbosity flags
 create a release on GH, get up on pypi

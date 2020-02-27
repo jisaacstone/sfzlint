@@ -35,7 +35,7 @@ def listdir(path):
 # special-purpose validators
 class TuneValidator(validators.Validator):
     def validate(self, value, config, *args):
-        spec_versions = config.get('spec_versions')
+        spec_versions = config.spec_versions
         if not spec_versions or 'aria' in spec_versions:
             return validators.Range(-2400, 2400).validate(value)
         return validators.Range(-100, 100).validate(value)
@@ -46,20 +46,19 @@ class SampleValidator(validators.Validator):
         try:
             if value[0] == '*':  # built-in *sine, *square, etc sounds
                 return
-            file_path = config.get('file_path')
-            if not file_path:
+            if not config.rel_path:
                 return
-            relpath = Path(value.replace('\\', '/'))
+            sampath = Path(value.replace('\\', '/'))
         except TypeError:
             return f'not a valid path "{value}"'
         try:
-            resolved = (Path(file_path).parent / relpath).resolve(strict=True)
+            resolved = (config.rel_path / sampath).resolve(strict=True)
         except FileNotFoundError:
             return f'file not found "{value}"'
 
-        parts = reversed(relpath.parts)
+        parts = reversed(sampath.parts)
         for part in parts:
-            if part == '..':
+            if part == '..':  # there is a limit to our cleverness
                 break
             resolved = resolved.parent
             if part not in listdir(resolved):
@@ -73,8 +72,7 @@ class CurveCCValidator(validators.Validator):
         if value < 7:
             # likely a default or built-in curve, no check
             return
-        sfz = config.get('sfz')
-        if sfz and value not in sfz.curves:
+        if config.sfz and value not in config.sfz.curves:
             return 'no corresponding curve_index found'
 
 
