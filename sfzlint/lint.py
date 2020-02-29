@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import re
 import sys
+import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 from pathlib import Path
 from lark.exceptions import UnexpectedCharacters, UnexpectedToken
-from .parser import validate, SFZValidatorConfig
+from .parser import validate, SFZ, SFZValidatorConfig
 from . import spec
 
 
@@ -43,10 +45,32 @@ def lint(options):
         )
         if options.rel_path:
             config.rel_path = options.rel_path
-        lint_file(filename, config=config)
+        if filename.suffix == '.xml':
+            lint_xml(filename, config)
+        else:
+            lint_sfz(filename, config=config)
 
 
-def lint_file(filename, config):
+def lint_xml(filename, config):
+    with open(filename) as fob:
+        xml = fob.read()
+    # xml is "malformed" because it lacks a single root element
+    # solution is to wrap it in a "root" tag
+    tree = ET.fromstring(
+        re.sub(r"(<\?xml[^>]+\?>)", r"\1<root>", xml) + "</root>")
+    defines = {
+        d.attrib['name'][1:]: d.attrib['value']
+        for d in tree.findall('.//Define')}
+    for ae in tree.findall('.//AriaElement'):
+        ae_path = filename.parent / ae.attrib['path']
+        config.file_name = ae_path
+        config.rel_path = ae_path.parent
+        if defines:
+            config.sfz = SFZ(defines=defines)
+        lint_sfz(ae_path, config)
+
+
+def lint_sfz(filename, config):
     err_cb = ecb(filename)
     try:
         validate(filename, err_cb=err_cb, config=config)

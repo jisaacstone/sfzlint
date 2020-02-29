@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import re
 from pathlib import Path
 from collections import ChainMap
 from lark import Lark, Transformer, Token
@@ -118,6 +119,7 @@ class SFZValidatorConfig:
             'file_name',
             'check_includes',
             'spec_versions',
+            'sfz',
         ):
             if kw in kwargs:
                 setattr(self, kw, kwargs[kw])
@@ -155,8 +157,8 @@ class SFZValidator(Transformer):
             self.config = SFZValidatorConfig()
 
         self.current_header = None
-        self.sfz = SFZ()
-        self.config.sfz = self.sfz
+        if not self.config.sfz:
+            self.config.sfz = SFZ()
         self.err_cb = err_cb
         self._curveccs = []
         super(SFZValidator, self).__init__(*args, **kwargs)
@@ -166,7 +168,7 @@ class SFZValidator(Transformer):
         if self.config.validate:
             self._validate_header(header)
         try:
-            self.sfz.headers.append(header)
+            self.config.sfz.headers.append(header)
             self.current_header = header
         except AttributeError as e:
             self._err(e.args[0], items[0])
@@ -174,14 +176,14 @@ class SFZValidator(Transformer):
     def define_macro(self, items):
         varname, value = items
         s_value = self._sanitize_token(value)
-        self.sfz.defines[varname.value] = s_value
+        self.config.sfz.defines[varname.value] = s_value
 
     def include_macro(self, items):
         token, = items
         sanitized = self._sanitize_token(token)
         if self.config.rel_path:
             self._load_include(sanitized)
-        self.sfz.includes.append(sanitized)
+        self.config.sfz.includes.append(sanitized)
 
     def opcode_exp(self, items):
         opcode, value = items
@@ -190,7 +192,7 @@ class SFZValidator(Transformer):
     def start(self, items):
         if self.config.validate_curvecc:
             self._validate_curvecc()  # must be at the end
-        return self.sfz
+        return self.config.sfz
 
     def _load_include(self, inc_path):
         path = self.config.rel_path / inc_path
@@ -226,13 +228,14 @@ class SFZValidator(Transformer):
             self._err(f'opcode outside of header ({opcode})', opcode)
             return
         if '$' in opcode:
-            pre, post = opcode.split('$', 1)
-            replaced = self._varreplace('$' + post)
-            opcode = update_token(opcode, f'{pre}{replaced}')
+            replaced = self._varreplace(opcode)
+            opcode = update_token(opcode, replaced)
         if opcode in self.current_header:
             self._warn('duplicate opcode', opcode)
 
         opcode = update_token(opcode, opcode.lower())
+        if '$' in value:
+            value = update_token(value, self._varreplace(value))
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
         if opcode.value == 'default_path':
@@ -253,21 +256,21 @@ class SFZValidator(Transformer):
                 self._warn(e.message, e.token)
 
     def _varreplace(self, token):
-        value = token[1:]
-        if value not in self.sfz.defines:
-            if self.config.warn_undefined_var:
-                self._err('undefined variable', token)
-            return token
-        else:
-            return self.sfz.defines[value].value
+        def onmatch(matchobj):
+            value = matchobj.group(0)[1:]
+            if value not in self.config.sfz.defines:
+                if self.config.warn_undefined_var:
+                    self._err(f'undefined variable {value}', token)
+                return matchobj.group(0)
+            else:
+                return str(self.config.sfz.defines[value])
+
+        return re.sub(r'\$\w+', onmatch, token)
 
     def _sanitize_token(self, token):
         if token[0] == '"' and token[-1] == '"':
             # quoated string
             return update_token(token, token[1:-1])
-        elif token[0] == '$':
-            # defined variable
-            return update_token(token, self._varreplace(token))
         for converter in (int, float, Note):
             # numerics
             try:

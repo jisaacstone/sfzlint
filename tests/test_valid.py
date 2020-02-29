@@ -166,6 +166,16 @@ class TestValid(TestCase):
             ''')
         self.assertEqual(sfz.headers[0]['set_cc40'], 63)
 
+    def test_define_parts(self):
+        sfz = self._parse(
+            '''
+            #define $dir samples
+            #define $subdir chello
+            <region>
+            sample=$dir/$subdir/c4.wav
+            ''')
+        self.assertEqual(sfz.headers[0]['sample'], 'samples/chello/c4.wav')
+
     def test_valid(self):
         sfz = self._parse(
             '''

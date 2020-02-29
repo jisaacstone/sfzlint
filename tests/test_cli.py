@@ -121,6 +121,13 @@ class TestSFZLint(TestCase):
             sfzlint()
         self.assertFalse(print_mock.called, print_mock.call_args_list)
 
+    @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'aria_program.xml')])
+    def test_xml_with_defines(self):
+        with patch('builtins.print') as print_mock:
+            sfzlint()
+        self.assertFalse(print_mock.called, print_mock.call_args_list)
+
 
 class TestSFZList(TestCase):
     @patch('sys.argv', new=['sfzlist'])

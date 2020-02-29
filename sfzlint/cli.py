@@ -36,7 +36,7 @@ def print_codes_in_path(path, search, filters, printer=print):
                 parsed = parser.parser().parse(contents)
                 validator = parser.SFZValidator(config={'file_path': fp})
                 validator.transform(parsed)
-                sfz = validator.sfz
+                sfz = validator.config.sfz
                 to_check = {str(k): k for h in sfz.headers for k in h}
                 for raw_oc in to_check.values():
                     try:
