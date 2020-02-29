@@ -101,6 +101,14 @@ class SFZValidatorConfig:
     rel_path = None
     sfz = None
     spec_versions = None
+    default_path = None
+
+    @property
+    def sample_dir(self):
+        path = self.rel_path or '.'
+        if self.default_path:
+            path /= self.default_path
+        return path
 
     def __init__(self, **kwargs):
         for kw in (
@@ -227,6 +235,8 @@ class SFZValidator(Transformer):
         opcode = update_token(opcode, opcode.lower())
         token = self._sanitize_token(value)
         self.current_header[opcode] = token
+        if opcode.value == 'default_path':
+            self.config.default_path = token
         if not self.config.validate:
             return
 

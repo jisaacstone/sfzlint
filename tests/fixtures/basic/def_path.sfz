@@ -1,0 +1,13 @@
+<control>
+default_path=arco/
+
+<region> sample=arco_c1_pp_down.wav  key=48 tune=25
+<region> sample=arco_c1_pp_up.wav key=49 tune=8
+<region> sample=arco_c1_mf_up.wav  key=50 tune=13
+<region> sample=arco_c1_pp_up.wav key=51
+<region> sample=arco_c1_pp_down.wav  key=52 tune=-20
+
+<control>
+default_path=../samples/sounds
+
+<region> sample=c1_ff_yo.wav key=53

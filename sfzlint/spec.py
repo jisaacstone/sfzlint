@@ -52,7 +52,7 @@ class SampleValidator(validators.Validator):
         except TypeError:
             return f'not a valid path "{value}"'
         try:
-            resolved = (config.rel_path / sampath).resolve(strict=True)
+            resolved = (config.sample_dir / sampath).resolve(strict=True)
         except FileNotFoundError:
             return f'file not found "{value}"'
 

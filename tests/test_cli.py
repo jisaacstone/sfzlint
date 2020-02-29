@@ -97,6 +97,13 @@ class TestSFZLint(TestCase):
         self.assertFalse(print_mock.called, print_mock.call_args_list)
 
     @patch('sys.argv', new=[
+        'sfzlint', str(fixture_dir / 'basic/def_path.sfz')])
+    def test_default_path(self):
+        with patch('builtins.print') as print_mock:
+            sfzlint()
+        self.assertFalse(print_mock.called, print_mock.call_args_list)
+
+    @patch('sys.argv', new=[
         'sfzlint', str(fixture_dir / 'basic/badcase.sfz')])
     def test_bad_case(self):
         with patch('builtins.print') as print_mock:
