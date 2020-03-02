@@ -20,6 +20,9 @@ Includes the `sfzlint` and `sfzlist` command line utilities
     label_ccN aria Any()
     bend_up v1 Range(-9600,9600)
 
+Opcode data is from [sfzformat.com](https://sfzformat.com/). If you see a bug in `syntax.yml` consider putting you PR
+against [the source](https://github.com/sfzformat/sfzformat.github.io/blob/source/_data/sfz/syntax.yml)
+
 ## Features
 
 * syntax validation
@@ -28,18 +31,29 @@ Includes the `sfzlint` and `sfzlist` command line utilities
 * validates `*_curvecc` values above 7 have a corresponding `<curve>` header
 * checks that sample files exists, also checks that case matches for portability with case-sensitive filesystems
 * pulls in #includes and replaces vars from #defines
+* validation based on aria .xml files
 
-To build the linter I built a parser using [Lark](https://github.com/lark-parser/lark).
+### HowTo
 
-This may be useful to some people. I've also included the `sfz.lark` file.
-The SFZ file format definition is vague. I had to make some assumptions. For example I assumed unquoted paths
-cannot include newlines or `=`. Also I assume opcodes and note names are always lowercase.
+If you have a project that is seperated into several `.sfz` files using `#include` macros
+Example:
 
-    from sfzlint import parser
-    lark_tree = parser.parse(sfz_string)
+    instra.sfz
+    samples/
+       a#1.wav
+       b1.wav
+       ...
+    includes/
+       piano.sfz
+       forte.sfz
+       ...
 
-Opcode data is from [sfzformat.com](https://sfzformat.com/). If you see a bug in `syntax.yml` consider putting you PR
-against [the source](https://github.com/sfzformat/sfzformat.github.io/blob/source/_data/sfz/syntax.yml)
+To validate the whole project you can use `sfzlint --check-includes instra.sfz`.
+Running sfzlint against a program `.xml` file will check includes by default.
+If you run `sfzlint includes/piano.sfz` and `piano.sfz` has some sample opcodes you may get file not found errors.
+To fix this run with `--rel-path`
+
+`sfzlint includes/piano.sfz --rel-path .`
 
 ## Installing
 

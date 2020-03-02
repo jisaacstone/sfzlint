@@ -65,6 +65,7 @@ def lint_xml(filename, config):
         ae_path = filename.parent / ae.attrib['path']
         config.file_name = ae_path
         config.rel_path = ae_path.parent
+        config.check_includes = True  # Always check on program .xml
         if defines:
             config.sfz = SFZ(defines=defines)
         lint_sfz(ae_path, config)

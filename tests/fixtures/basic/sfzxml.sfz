@@ -1,1 +1,2 @@
 <region> sample=$sample_dir/c1_ff_yo.wav
+<region> foo=bar  // an error to confirm this file was parsed

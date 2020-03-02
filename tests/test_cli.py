@@ -126,7 +126,11 @@ class TestSFZLint(TestCase):
     def test_xml_with_defines(self):
         with patch('builtins.print') as print_mock:
             sfzlint()
-        self.assertFalse(print_mock.called, print_mock.call_args_list)
+        self.assertTrue(print_mock.called)
+        calls = [ErrMsg(*a[0][0].split(':'))
+                 for a in print_mock.call_args_list]
+        self.assertEqual(1, len(calls), calls)
+        self.assertIn('foo', calls[0].message)
 
 
 class TestSFZList(TestCase):
