@@ -11,11 +11,11 @@ for pfile in Path(__file__).parent.rglob('*.pickle'):
 
 setup(
     name='sfzlint',
-    version='0.1.1',
+    version='0.1.2',
     description='parser and linter for sfz files written in python',
     author='jisaacstone',
     packages=['sfzlint'],
-    package_data={'sfzlint': ['*.ebnf']},
+    package_data={'sfzlint': ['*.ebnf','*.yml','*.lark']},
     test_suite='tests',
     entry_points={
         'console_scripts': [
@@ -25,6 +25,7 @@ setup(
     },
     install_requires=[
         'lark-parser>=0.7.8',
+        'pyyaml>=6.0.0'
     ],
     python_requires='>3.6',
     license='MIT',

@@ -59,6 +59,7 @@ To fix this run with `--rel-path`
 
 I've not put this on pypi yet. You can install with pip
 
+    pip install pyyaml
     pip install git+git://github.com/jisaacstone/sfzlint.git
 
 Or clone the repo and use `python setup.py install`
