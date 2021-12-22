@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 from pathlib import Path
@@ -8,6 +9,8 @@ from sfzlint.cli import sfzlint, sfzlist
 
 
 fixture_dir = Path(__file__).parent / 'fixtures'
+is_fs_case_insensitive = (
+    os.path.exists(__file__.upper()) and os.path.exists(__file__.lower()))
 
 
 class ErrMsg(namedtuple('errmsg', (
@@ -21,7 +24,7 @@ class TestSFZLint(TestCase):
     def assert_has_message(self, message, err_list):
         msglen = len(message)
         msgs = {e.message[:msglen] for e in err_list}
-        self.assertIn(message, msgs)
+        self.assertIn(message, msgs, f'{message} not in {err_list}')
 
     @patch('sys.argv', new=[
         'sfzlint', str(fixture_dir / 'basic/valid.sfz')])
@@ -111,7 +114,10 @@ class TestSFZLint(TestCase):
         self.assertTrue(print_mock.called)
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
-        self.assert_has_message('case does not match', calls)
+        if (is_fs_case_insensitive):
+            self.assert_has_message('case does not match', calls)
+        else:
+            self.assert_has_message('file not found', calls)
 
     @patch('sys.argv', new=[
         'sfzlint', str(fixture_dir / 'include/sub/relpath.sfz'),

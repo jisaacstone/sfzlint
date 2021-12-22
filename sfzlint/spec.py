@@ -54,7 +54,7 @@ class SampleValidator(validators.Validator):
         try:
             resolved = (config.sample_dir / sampath).resolve(strict=True)
         except FileNotFoundError:
-            return f'file not found "{value}"'
+            return f'file not found "{config.sample_dir / sampath}"'
 
         parts = reversed(sampath.parts)
         for part in parts:
