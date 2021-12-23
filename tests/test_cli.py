@@ -80,7 +80,7 @@ class TestSFZLint(TestCase):
         calls = [ErrMsg(*a[0][0].split(':'))
                  for a in print_mock.call_args_list]
         self.assert_has_message('header spec v2 not in', calls)
-        self.assert_has_message('opcode spec aria is not', calls)
+        self.assert_has_message('opcode spec v2 is not', calls)
 
     @patch('sys.argv', new=[
         'sfzlint', str(fixture_dir / 'basic/nosample.sfz')])

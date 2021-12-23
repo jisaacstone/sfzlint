@@ -48,7 +48,7 @@ class OpcodeIntRepl:
             return parser.update_token(token, 'varNN' + opcode[4:])
         self.subs['target'] = parser.update_token(
             token, opcode[5:].replace('X', 'N'))
-        return parser.update_token(token, 'varNN_target')
+        return parser.update_token(token, 'varNN_*')
 
     def _handle_hint(self, opcode, token):
         self.subs['target'] = parser.update_token(

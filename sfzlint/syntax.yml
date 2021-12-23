@@ -1,4 +1,5 @@
-format: 0
+format: 2
+versions: ["ARIA", "Cakewalk", "LinuxSampler", "SFZ v1", "SFZ v2", "sfizz"] # , "Unknown"
 # ------------------------------------------------------------------------------
 # Headers
 # ------------------------------------------------------------------------------
@@ -29,7 +30,7 @@ headers:
   version: "SFZ v2"
 
 - name: "effect"
-  short_description: "SFZ header for effects controls."
+  short_description: "SFZ v2 header for effects controls."
   version: "SFZ v2"
 
 - name: "master"
@@ -38,13 +39,21 @@ headers:
   version: "ARIA"
 
 - name: "midi"
-  short_description: "ARIA extension, was added for MIDI pre-processor effects."
+  short_description:
+    "ARIA extension, was added for MIDI pre-processor effects.
+    From ARIA v1.0.8.0+ an ‹<a href='/headers/effect'>effect<a>› section with a
+    <a href='/opcodes/bus'>bus</a>=midi can be used instead."
   version: "ARIA"
+
+- name: "sample"
+  short_description: "Allows to embed sample data directly in SFZ files (Rapture)."
+  version: "Cakewalk"
 # ------------------------------------------------------------------------------
 # Opcodes
 # ------------------------------------------------------------------------------
 categories:
 - name: "Real-Time Instrument Script"
+  id: "scr"
   url: "http://doc.linuxsampler.org/Instrument_Scripts/"
   opcodes:
   - name: "script"
@@ -61,6 +70,7 @@ categories:
     It could be samples or oscillators"
   types:
   - name: "Sample Playback"
+    id: "spl"
     short_description:
       "Sample Playback opcodes defines the parameters of the sound generation."
     opcodes:
@@ -85,7 +95,6 @@ categories:
       modulation:
         midi_cc:
         - name: "delay_ccN"
-          version: "SFZ v1"
           short_description:
             "Region delay time after MIDI continuous controller N messages are
             received. If the region receives a note-off message before
@@ -99,6 +108,8 @@ categories:
             min: 0
             max: 100
             unit: "seconds"
+        - name: "delay_curveccN"
+          version: "ARIA"
 
     - name: "delay_random"
       short_description: "Region random delay time."
@@ -121,28 +132,63 @@ categories:
       modulation:
         midi_cc:
         - name: "delay_samples_onccN"
-          version: "SFZ v2"
           value:
             type_name: "integer"
             unit: "sample units"
 
     - name: "end"
-      short_description: "The endpoint of the sample."
+      short_description: "The endpoint of the sample. If unspecified, the entire sample will play."
       version: "SFZ v1"
       value:
         type_name: "integer"
-        default: 0
+        default: "unspecified"
         min: 0
         max: 4294967296
         unit: "sample units"
 
+    - name: "loop_count"
+      short_description: "The number of times a loop will repeat."
+      version: "SFZ v2"
+      alias:
+      - name: "loopcount"
+        version: "ARIA"
+      value:
+        type_name: "integer"
+
+    - name: "loop_crossfade"
+      short_description: "Loop cross fade."
+      version: "SFZ v2"
+#     alias:
+#     - name: "loopcrossfade"
+      value:
+        type_name: "float"
+        unit: "seconds"
+
+    - name: "loop_end"
+      short_description: "The loop end point, in samples."
+      version: "SFZ v1"
+      alias:
+      - name: "loopend"
+      value:
+        type_name: "integer"
+        unit: "sample units"
+        default: 0
+        min: 0
+        max: 4294967296
+      modulation:
+        midi_cc:
+        - name: "loop_lengthccN"
+          version: "Cakewalk"
+          short_description: "Change of loop end point."
+          alias:
+          - name: "loop_length_onccN"
+
     - name: "loop_mode"
       short_description:
         "Allows playing samples with loops defined in the unlooped mode."
+      version: "SFZ v1"
       alias:
       - name: "loopmode"
-        version: "SFZ v2"
-      version: "SFZ v1"
       value:
         type_name: "string"
         default:
@@ -177,24 +223,44 @@ categories:
       version: "SFZ v1"
       alias:
       - name: "loopstart"
-        version: "SFZ v2"
       value:
         type_name: "integer"
+        unit: "sample units"
         default: 0
         min: 0
         max: 4294967296
+      modulation:
+        midi_cc:
+        - name: "loop_startccN"
+          short_description: "Change of loop start point."
+          version: "Cakewalk"
+          alias:
+          - name: "loop_start_onccN"
 
-    - name: "loop_end"
-      short_description: "The loop end point, in samples."
-      version: "SFZ v1"
+    - name: "loop_tune"
+      short_description: "Tuning for only the loop segment."
+      version: "Cakewalk"
       alias:
-      - name: "loopend"
-        version: "SFZ v2"
+      - name: "looptune"
+        version: "ARIA"
       value:
-        type_name: "integer"
+        type_name: "float"
+        unit: "cents"
         default: 0
-        min: 0
-        max: 4294967296
+
+    - name: "loop_type"
+      short_description: "Defines the looping mode."
+      version: "SFZ v2"
+      alias:
+      - name: "looptype"
+        version: "ARIA"
+      value:
+        type_name: "string"
+        default: "forward"
+        options:
+        - name: "forward"
+        - name: "backward"
+        - name: "alternate"
 
     - name: "offset"
       short_description: "The offset used to play the sample."
@@ -208,7 +274,6 @@ categories:
       modulation:
         midi_cc:
         - name: "offset_ccN"
-          version: "SFZ v1"
           short_description:
             "The offset used to play the sample according to last position
             of MIDI continuous controller N."
@@ -238,6 +303,15 @@ categories:
       value:
         type_name: "string"
 
+    - name: "sample_fadeout"
+      short_description:
+        "Number of seconds before the end of sample playback that the player
+        should begin a realtime fadeout."
+      version: "Cakewalk"
+      value:
+        type_name: "float"
+        unit: "seconds"
+
     - name: "sync_beats"
       short_description: "Region playing synchronization to host position."
       version: "SFZ v1"
@@ -266,6 +340,20 @@ categories:
       value:
         type_name: "float"
         unit: "beats"
+      modulation:
+        midi_cc:
+        - name: "delay_beats_onccN"
+          version: "ARIA"
+        - name: "delay_beats_curveccN"
+          version: "ARIA"
+
+    - name: "delay_beats_random"
+      short_description:
+        "Delays the start of the region after a random amount of musical beats."
+      version: "ARIA"
+      value:
+        type_name: "float"
+        unit: "beats"
 
     - name: "stop_beats"
       short_description:
@@ -277,37 +365,13 @@ categories:
 
     - name: "direction"
       short_description: "The direction in which the sample is to be played."
-      version: "ARIA"
+      version: "SFZ v2"
       value:
         type_name: "string"
         default: "forward"
         options:
         - name: "forward"
         - name: "reverse"
-
-    - name: "loop_count"
-      short_description: "The number of times a loop will repeat."
-      version: "ARIA"
-      value:
-        type_name: "integer"
-
-    - name: "loop_crossfade"
-      short_description: "Loop cross fade."
-      version: "SFZ v2"
-      value:
-        type_name: "float"
-        unit: "seconds"
-
-    - name: "loop_type"
-      short_description: "Defines the looping mode."
-      version: "ARIA"
-      value:
-        type_name: "string"
-        default: "forward"
-        options:
-        - name: "forward"
-        - name: "backward"
-        - name: "alternate"
 
     - name: "md5"
       short_description:
@@ -321,7 +385,7 @@ categories:
 
     - name: "reverse_loccN"
       short_description:
-        "If MIDI CC X is between <code>reverse_loccN</code> and
+        "If MIDI CC N is between <code>reverse_loccN</code> and
         <code>reverse_hiccN</code>, the region plays reversed."
       version: "SFZ v2"
       value:
@@ -331,7 +395,7 @@ categories:
 
     - name: "reverse_hiccN"
       short_description:
-        "If MIDI CC X is between <code>reverse_loccN</code> and
+        "If MIDI CC N is between <code>reverse_loccN</code> and
         <code>reverse_hiccN</code>, the region plays reversed."
       version: "SFZ v2"
       value:
@@ -349,6 +413,7 @@ categories:
         - name: "off"
 
 - name: "Instrument Settings"
+  id: "ins"
   url: "/misc/categories#instrument-settings"
   short_description: "Opcodes used under the <control> header."
   opcodes:
@@ -360,7 +425,7 @@ categories:
       type_name: "string"
 
   - name: "default_path"
-    short_description: "Relative path for samples."
+    short_description: "Default file path."
     version: "SFZ v2"
     value:
       type_name: "string"
@@ -384,9 +449,15 @@ categories:
     value:
       type_name: "string"
 
+  - name: "label_keyN"
+    short_description: "Creates a label for a key."
+    version: "sfizz"
+    value:
+      type_name: "string"
+
   - name: "set_ccN"
     short_description:
-      "Sets a default initial value for MIDI CC number X,
+      "Sets a default initial value for MIDI CC number N,
       when the instrument is initially loaded."
     version: "SFZ v2"
     value:
@@ -396,8 +467,8 @@ categories:
 
   - name: "#include"
     short_description:
-      "Allows using SFZ files as building blocks for creating larger,
-      more complex SFZ files."
+      "A special directive, which allows using SFZ files as building blocks
+      for creating larger, more complex SFZ files."
     version: "ARIA"
     macro: true
     value:
@@ -412,55 +483,42 @@ categories:
     short_description:
       "Determines whether a parameter is modulated by addition or multiplication."
     version: "ARIA"
-    see_also:
-    - "varNN_mod"
+    targets:
+    - name: "amplitude"
+    - name: "bitred"
+    - name: "cutoff"
+    - name: "cutoff2"
+    - name: "decim"
+    - name: "delay"
+    - name: "delay_beats"
+    - name: "fil_gain"
+    - name: "fil2_gain"
+    - name: "offset"
+    - name: "pan"
+    - name: "pitch"
+    - name: "position"
+    - name: "resonance"
+    - name: "resonance2"
+    - name: "stop_beats"
+    - name: "tune"
+    - name: "volume"
+    - name: "width"
+    value:
+      type_name: "string"
+      options:
+      - name: "add"
+      - name: "mult"
 
   - name: "set_hdccN"
     short_description:
       "Like <a href='/opcodes/set_ccN'>set_ccN</a> but with floating point MIDI CCs."
     version: "ARIA"
+    alias:
+    - name: "set_realccN"
     value:
       type_name: "float"
-
-  - name: "sostenuto_lo"
-    short_description:
-      "Sets the minimum point at which the sostenuto pedal (MIDI CC 66)
-      is considered 'down'."
-    version: "ARIA"
-    value:
-      type_name: "integer"
-      default: 1
       min: 0
-      max: 127
-
-  - name: "sostenuto_cc"
-    short_description: "Reassigns the sostenuto pedal CC to a non-standard value."
-    version: "ARIA"
-    value:
-      type_name: "integer"
-      default: 66
-      min: 0
-      max: 127
-
-  - name: "sustain_lo"
-    short_description:
-      "Sets the minimum point at which the sustain pedal (MIDI CC 64)
-      is considered 'down'."
-    version: "ARIA"
-    value:
-      type_name: "integer"
-      default: 1
-      min: 0
-      max: 127
-
-  - name: "sustain_cc"
-    short_description: "Reassigns the sustain pedal CC to a non-standard value."
-    version: "ARIA"
-    value:
-      type_name: "integer"
-      default: 64
-      min: 0
-      max: 127
+      max: 1
 
   - name: "sw_note_offset"
     short_description:
@@ -486,10 +544,6 @@ categories:
     value:
       type_name: "string"
       default: "null"
-    see_also:
-    - "master_label"
-    - "group_label"
-    - "region_label"
 
   - name: "master_label"
     short_description:
@@ -499,10 +553,6 @@ categories:
     value:
       type_name: "string"
       default: "null"
-    see_also:
-    - "global_label"
-    - "group_label"
-    - "region_label"
 
   - name: "group_label"
     short_description:
@@ -512,10 +562,6 @@ categories:
     value:
       type_name: "string"
       default: "null"
-    see_also:
-    - "master_label"
-    - "global_label"
-    - "region_label"
 
   - name: "region_label"
     short_description:
@@ -525,13 +571,10 @@ categories:
     value:
       type_name: "string"
       default: "null"
-    see_also:
-    - "master_label"
-    - "global_label"
-    - "group_label"
 
   types:
   - name: "Voice Lifecycle"
+    id: "vlc"
     opcodes:
     - name: "group"
       short_description: "Exclusive group number for this region."
@@ -542,23 +585,25 @@ categories:
       value:
         type_name: "integer"
         default: 0
-        min: 0
-        max: 4294967296
+        min: -2147483648
+        max: 2147483647
 
     - name: "off_by"
       short_description: "Region off group."
       version: "SFZ v1"
+      alias:
+      - name: "offby"
       value:
         type_name: "integer"
         default: 0
-        min: 0
-        max: 4294967296
-      alias:
-      - name: "offby"
+        min: -2147483648
+        max: 2147483647
 
     - name: "off_mode"
       short_description: "Region off mode."
       version: "SFZ v1"
+#     alias:
+#     - name: "offmode"
       value:
         type_name: "string"
         default: "fast"
@@ -590,13 +635,19 @@ categories:
         max: 1024
 
     - name: "polyphony"
-      short_description: "Polyphony voice limit for a group."
+      short_description: "Polyphony voice limit."
       version: "SFZ v2"
       value:
         type_name: "integer"
 
     - name: "note_polyphony"
       short_description: "Polyphony limit for playing the same note repeatedly."
+      version: "SFZ v2"
+      value:
+        type_name: "integer"
+
+    - name: "polyphony_stealing"
+      short_description: ""
       version: "ARIA"
       value:
         type_name: "integer"
@@ -605,7 +656,7 @@ categories:
       short_description:
         "Controls note-stealing behavior for a single pitch,
         when using <a href='/opcodes/note_polyphony'>note_polyphony</a>."
-      version: "ARIA"
+      version: "SFZ v2"
       value:
         type_name: "string"
         default: "on"
@@ -628,26 +679,29 @@ categories:
     - name: "off_curve"
       short_description:
         "When <a href='/opcodes/off_mode'>off_mode</a> is set to time,
-        this specifies the ‹<a href='/headers/curve'>curve</a>› number
-        for regions being muted by voice-stealing."
+        this specifies the math to be used to fade out the regions being
+        muted by voice-stealing."
       version: "ARIA"
       value:
-        type_name: "float"
-      see_also:
-      - "off_shape"
-      - "off_time"
+        type_name: "integer"
+        default: 10
+        min: -2
+        max: 10
+        options:
+        - name: "-2"
+        - name: "-1"
+        - name: "0"
+        - name: "1"
+        - name: "2"
+        - name: "10"
 
     - name: "off_shape"
       short_description:
-        "When <a href='/opcodes/off_mode'>off_mode</a> is set to time,
-        this specifies the curvature of the fadeout curve for regions
-        being muted by voice-stealing."
+        "The coefficient used by <a href='/opcodes/off_curve'>off_curve</a>."
       version: "ARIA"
       value:
         type_name: "float"
-      see_also:
-      - "off_curve"
-      - "off_time"
+        default: -10.3616
 
     - name: "off_time"
       short_description:
@@ -656,20 +710,7 @@ categories:
       version: "ARIA"
       value:
         type_name: "float"
-      see_also:
-      - "off_curve"
-      - "off_shape"
-
-    - name: "polyphony_group"
-      short_description:
-        "An alias for <a href='/opcodes/group'>group</a> to reduce the confusion
-        between the group opcode and the ‹<a href='/headers/group'>group</a>› header."
-      version: "ARIA"
-      value:
-        type_name: "integer"
-        default: 0
-        min: 0
-        max: 4294967296
+        default: 0.006
 
 - name: "Region Logic"
   url: "/misc/categories#region-logic"
@@ -677,6 +718,7 @@ categories:
     "Region Logic opcodes define the conditions under which a voice plays or stops."
   types:
   - name: "Key Mapping"
+    id: "map"
     opcodes:
     - name: "key"
       short_description:
@@ -720,8 +762,8 @@ categories:
       version: "SFZ v1"
       value:
         type_name: "integer"
-        default: 0
-        min: 0
+        default: 1
+        min: 1
         max: 127
 
     - name: "hivel"
@@ -733,10 +775,11 @@ categories:
       value:
         type_name: "integer"
         default: 127
-        min: 0
+        min: 1
         max: 127
 
   - name: "MIDI Conditions"
+    id: "mid"
     opcodes:
     - name: "lochan"
       short_description:
@@ -803,6 +846,64 @@ categories:
         default: 8192
         min: -8192
         max: 8192
+
+    - name: "sostenuto_cc"
+      short_description: "Reassigns the sostenuto pedal CC to a non-standard value."
+      version: "ARIA"
+      value:
+        type_name: "float"
+        default: 66
+        min: 0
+        max: 127
+
+    - name: "sostenuto_lo"
+      short_description:
+        "Sets the minimum point at which the sostenuto pedal (MIDI CC 66)
+        is considered 'down'."
+      version: "ARIA"
+      value:
+        type_name: "float"
+        default: 0.5
+        min: 0
+        max: 127
+
+    - name: "sostenuto_sw"
+      short_description: "Turns the sostenuto switch on or off."
+      version: "SFZ v2"
+      value:
+        type_name: "string"
+        options:
+        - name: "on"
+        - name: "off"
+
+    - name: "sustain_cc"
+      short_description: "Reassigns the sustain pedal CC to a non-standard value."
+      version: "ARIA"
+      value:
+        type_name: "float"
+        default: 64
+        min: 0
+        max: 127
+
+    - name: "sustain_lo"
+      short_description:
+        "Sets the minimum point at which the sustain pedal (MIDI CC 64)
+        is considered 'down'."
+      version: "ARIA"
+      value:
+        type_name: "float"
+        default: 0.5
+        min: 0
+        max: 127
+
+    - name: "sustain_sw"
+      short_description: "Turns the sustain switch on or off."
+      version: "SFZ v2"
+      value:
+        type_name: "string"
+        options:
+        - name: "on"
+        - name: "off"
 
     - name: "sw_lokey"
       short_description:
@@ -887,24 +988,6 @@ categories:
         - name: "previous"
           description: "Region uses the velocity of the previous note."
 
-    - name: "sustain_sw"
-      short_description: "Turns the sustain switch on or off."
-      version: "SFZ v2"
-      value:
-        type_name: "string"
-        options:
-        - name: "on"
-        - name: "off"
-
-    - name: "sostenuto_sw"
-      short_description: "Turns the sostenuto switch on or off."
-      version: "SFZ v2"
-      value:
-        type_name: "string"
-        options:
-        - name: "on"
-        - name: "off"
-
     - name: "loprog"
       short_description:
         "The region plays when the MIDI program number is between <code>loprog</code>
@@ -933,6 +1016,9 @@ categories:
       version: "ARIA"
       value:
         type_name: "float"
+        min: 0
+        max: 1
+        default: 0
 
     - name: "hihdccN"
       short_description:
@@ -940,17 +1026,21 @@ categories:
       version: "ARIA"
       value:
         type_name: "float"
+        min: 0
+        max: 1
+        default: 1
 
     - name: "sw_default"
-      short_description: ""
-      version: "ARIA"
+      short_description:
+        "Define keyswitch 'power on default' so that you hear something when a patch loads."
+      version: "SFZ v2"
       value:
         type_name: "integer"
         min: 0
         max: 127
 
     - name: "sw_label"
-      short_description: ""
+      short_description: "Label for activated keyswitch on GUI."
       version: "ARIA"
       value:
         type_name: "string"
@@ -995,7 +1085,6 @@ categories:
         - name: "varNN_onccX"
           short_description:
             "Specifies the method used to calculate variable number NN from MIDI CCs."
-          version: "ARIA"
           value:
             type_name: "float"
             min: 0
@@ -1004,34 +1093,32 @@ categories:
           short_description:
             "Specifies the ‹<a href='/headers/curve'>curve</a>› number
             which MIDI CC X uses to modulate variable NN."
-          version: "ARIA"
           value:
             type_name: "integer"
             min: 0
             max: 255
 
-    - name: "varNN_target"
+    - name: "varNN_*"
       short_description: "Specifies the target for variable NN to modulate."
       version: "ARIA"
-      value:
-        type_name: "string"
-        options:
-        - name: "amplitude"
-        - name: "bitred"
-        - name: "cutoff"
-        - name: "cutoff2"
-        - name: "decim"
-        - name: "eqNbw"
-        - name: "eqNfreq"
-        - name: "eqNgain"
-        - name: "pan"
-        - name: "pitch"
-        - name: "resonance"
-        - name: "resonance2"
-        - name: "volume"
-        - name: "width"
+      targets:
+      - name: "amplitude"
+      - name: "bitred"
+      - name: "cutoff"
+      - name: "cutoff2"
+      - name: "decim"
+      - name: "eqNbw"
+      - name: "eqNfreq"
+      - name: "eqNgain"
+      - name: "pan"
+      - name: "pitch"
+      - name: "resonance"
+      - name: "resonance2"
+      - name: "volume"
+      - name: "width"
 
   - name: "Internal Conditions"
+    id: "int"
     opcodes:
     - name: "lobpm"
       short_description: "Host tempo value."
@@ -1158,6 +1245,7 @@ categories:
         type_name: "float"
 
   - name: "Triggers"
+    id: "trg"
     opcodes:
     - name: "trigger"
       short_description:
@@ -1191,7 +1279,7 @@ categories:
             "Region will play on note-off. The velocity used to play
             the note-off sample is the velocity value of the corresponding
             (previous) note-on message. Ignores sustain pedal."
-          version: "ARIA"
+          version: "SFZ v2"
 
     - name: "on_loccN"
       short_description:
@@ -1199,14 +1287,14 @@ categories:
         and <code>on_hiccN</code> is received, the region will play.
         Default value is -1, it means unassigned."
       version: "SFZ v1"
-      alias:
-      - name: "start_loccN"
-        version: "SFZ v2"
       value:
         type_name: "integer"
         default: -1
         min: 0
         max: 127
+      alias:
+      - name: "start_loccN"
+        version: "SFZ v2"
 
     - name: "on_hiccN"
       short_description:
@@ -1214,40 +1302,42 @@ categories:
         and <code>on_hiccN</code> is received, the region will play.
         Default value is -1, it means unassigned."
       version: "SFZ v1"
+      value:
+        type_name: "integer"
+        default: -1
+        min: 0
+        max: 127
       alias:
       - name: "start_hiccN"
         version: "SFZ v2"
-      value:
-        type_name: "integer"
-        default: -1
-        min: 0
-        max: 127
 
-    - name: "start_loccN"
+    - name: "on_lohdccN"
       short_description:
-        "If a MIDI control message with a value between <code>start_loccN</code>
-        and <code>start_hiccN</code> is received, the region will play.
-        Alias for <a href='/opcodes/on_loccN'>on_loccN</a>.
-        Default value is -1, it means unassigned."
-      version: "SFZ v2"
+        "Like <a href='/opcodes/on_loccN'>on_loccN</a> but with floating point MIDI CCs."
+      version: "ARIA"
       value:
-        type_name: "integer"
+        type_name: "float"
         default: -1
         min: 0
-        max: 127
+        max: 1
+      alias:
+      - name: "start_lohdccN"
+        short_description:
+          "Like <a href='/opcodes/start_loccN'>start_loccN</a> but with floating point MIDI CCs."
 
-    - name: "start_hiccN"
+    - name: "on_hihdccN"
       short_description:
-        "If a MIDI control message with a value between <code>start_loccN</code>
-        and <code>start_hiccN</code> is received, the region will play.
-        Alias for <a href='/opcodes/on_hiccN'>on_hiccN</a>.
-        Default value is -1, it means unassigned."
-      version: "SFZ v2"
+        "Like <a href='/opcodes/on_hiccN'>on_hiccN</a> but with floating point MIDI CCs."
+      version: "ARIA"
       value:
-        type_name: "integer"
+        type_name: "float"
         default: -1
         min: 0
-        max: 127
+        max: 1
+      alias:
+      - name: "start_hihdccN"
+        short_description:
+          "Like <a href='/opcodes/start_hiccN'>start_hiccN</a> but with floating point MIDI CCs."
 
     - name: "stop_loccN"
       short_description:
@@ -1273,11 +1363,32 @@ categories:
         min: 0
         max: 127
 
+    - name: "stop_lohdccN"
+      short_description:
+        "Like <a href='/opcodes/stop_loccN'>stop_loccN</a> but with floating point MIDI CCs."
+      version: "ARIA"
+      value:
+        type_name: "float"
+        default: -1
+        min: 0
+        max: 1
+
+    - name: "stop_hihdccN"
+      short_description:
+        "Like <a href='/opcodes/stop_hiccN'>stop_hiccN</a> but with floating point MIDI CCs."
+      version: "ARIA"
+      value:
+        type_name: "float"
+        default: -1
+        min: 0
+        max: 1
+
 - name: "Performance Parameters"
   url: "/misc/categories#performance-parameters"
   short_description: "Performance Parameters are all sound modifiers."
   types:
   - name: "Amplifier"
+    id: "amp"
     opcodes:
     - name: "pan"
       short_description: "The panoramic position for the region."
@@ -1306,6 +1417,16 @@ categories:
         - name: "pan_stepccN"
           version: "Cakewalk"
 
+    - name: "pan_random"
+      short_description: "Random panoramic position for the region."
+      version: "ARIA"
+      value:
+        type_name: "float"
+        default: 0
+        min: -100
+        max: 100
+        unit: "%"
+
     - name: "position"
       short_description:
         "Only operational for stereo samples, <code>position</code> defines
@@ -1319,6 +1440,39 @@ categories:
         min: -100
         max: 100
         unit: "%"
+      modulation:
+        midi_cc:
+        - name: "position_onccN"
+          version: "ARIA"
+        - name: "position_curveccN"
+          version: "ARIA"
+        - name: "position_smoothccN"
+          version: "ARIA"
+        - name: "position_stepccN"
+          version: "ARIA"
+
+    - name: "position_random"
+      short_description:
+        ""
+      version: "ARIA"
+      value:
+        type_name: "float"
+        default: 0
+        min: -100
+        max: 100
+        unit: "%"
+
+    - name: "position_keycenter"
+      short_description: ""
+      version: "ARIA"
+
+    - name: "position_keytrack"
+      short_description: ""
+      version: "ARIA"
+
+    - name: "position_veltrack"
+      short_description: ""
+      version: "ARIA"
 
     - name: "volume"
       short_description: "The volume for the region, in decibels."
@@ -1335,12 +1489,11 @@ categories:
         midi_cc:
         - name: "gain_ccN"
           short_description: "Gain applied on MIDI control N, in decibels."
-          version: "SFZ v1"
           alias:
           - name: "gain_onccN"
             version: "SFZ v2"
           - name: "volume_onccN"
-            version: "ARIA"
+            version: "SFZ v2"
           value:
             type_name: "float"
             default: 0
@@ -1348,15 +1501,15 @@ categories:
             max: 48
             unit: "dB"
         - name: "volume_curveccN"
-          version: "ARIA"
+          version: "SFZ v2"
           value:
             type_name: "integer"
             min: 0
             max: 255
         - name: "volume_smoothccN"
-          version: "ARIA"
+          version: "SFZ v2"
         - name: "volume_stepccN"
-          version: "ARIA"
+          version: "SFZ v2"
 
     - name: "width"
       short_description:
@@ -1365,7 +1518,7 @@ categories:
       version: "SFZ v1"
       value:
         type_name: "float"
-        default: 0
+        default: 100
         min: -100
         max: 100
         unit: "%"
@@ -1419,6 +1572,18 @@ categories:
         min: -100
         max: 100
         unit: "%"
+      modulation:
+        midi_cc:
+        - name: "amp_veltrack_onccN"
+          version: "ARIA"
+          alias:
+          - name: "amp_veltrack_ccN"
+        - name: "amp_veltrack_curveccN"
+          version: "ARIA"
+
+    - name: "amp_veltrack_random"
+      short_description: ""
+      version: "ARIA"
 
     - name: "amp_velcurve_N"
       short_description: "User-defined amplifier velocity curve."
@@ -1443,6 +1608,9 @@ categories:
         min: 0
         max: 24
         unit: "dB"
+      alias:
+      - name: "gain_random"
+        version: "Cakewalk"
 
     - name: "rt_decay"
       short_description:
@@ -1456,8 +1624,6 @@ categories:
         min: 0
         max: 200
         unit: "dB"
-
-    # TODO: Single 'Crossfade' page with common description?
 
     - name: "xf_cccurve"
       short_description: "MIDI controllers crossfade curve for the region."
@@ -1632,7 +1798,7 @@ categories:
     - name: "phase"
       short_description:
         "If invert is set, the region is played with inverted phase."
-      version: "ARIA"
+      version: "SFZ v2"
       value:
         type_name: "string"
         default: "normal"
@@ -1645,7 +1811,7 @@ categories:
         "Amplitude for the specified region in percentage of full amplitude."
       version: "ARIA"
       value:
-        type_name: "integer"
+        type_name: "float"
         default: 100
         min: 0
         max: 100
@@ -1655,23 +1821,19 @@ categories:
         lfo: "✓"
         midi_cc:
         - name: "amplitude_onccN"
-          version: "ARIA"
           alias:
           - name: "amplitude_ccN"
-            version: "ARIA"
           value:
-            type_name: "integer"
+            type_name: "float"
             min: 0
             max: 100
             unit: "%"
         - name: "amplitude_curveccN"
-          version: "ARIA"
           value:
             type_name: "integer"
             min: 0
             max: 255
         - name: "amplitude_smoothccN"
-          version: "ARIA"
 
     - name: "global_amplitude"
       short_description:
@@ -1680,7 +1842,7 @@ categories:
         the ‹<a href='/headers/global'>global</a>› header."
       version: "ARIA"
       value:
-        type_name: "integer"
+        type_name: "float"
         default: 100
         min: 0
         max: 100
@@ -1693,7 +1855,7 @@ categories:
         the ‹<a href='/headers/master'>master</a>› header."
       version: "ARIA"
       value:
-        type_name: "integer"
+        type_name: "float"
         default: 100
         min: 0
         max: 100
@@ -1706,7 +1868,7 @@ categories:
         the ‹<a href='/headers/group'>group</a>› header."
       version: "ARIA"
       value:
-        type_name: "integer"
+        type_name: "float"
         default: 100
         min: 0
         max: 100
@@ -1723,7 +1885,7 @@ categories:
 
     - name: "pan_keycenter"
       short_description: "Center key for pan keyboard tracking."
-      version: "ARIA"
+      version: "SFZ v2"
       value:
         type_name: "integer"
         default: 60
@@ -1733,7 +1895,7 @@ categories:
     - name: "pan_keytrack"
       short_description:
         "The amount by which the panning of a note is shifted with each key."
-      version: "ARIA"
+      version: "SFZ v2"
       value:
         type_name: "float"
         default: 0
@@ -1743,7 +1905,7 @@ categories:
 
     - name: "pan_veltrack"
       short_description: "The effect of note velocity on panning."
-      version: "ARIA"
+      version: "SFZ v2"
       value:
         type_name: "float"
         default: 0
@@ -1791,6 +1953,7 @@ categories:
         unit: "dB"
 
   - name: "EQ"
+    id: "eq"
     opcodes:
     - name: "eqN_bw"
       short_description: "Bandwidth of the equalizer band, in octaves."
@@ -1806,7 +1969,6 @@ categories:
         lfo: "✓"
         midi_cc:
         - name: "eqN_bwccX"
-          version: "SFZ v1"
           alias:
           - name: "eqN_bw_onccX"
             version: "SFZ v2"
@@ -1831,7 +1993,6 @@ categories:
         lfo: "✓"
         midi_cc:
         - name: "eqN_freqccX"
-          version: "SFZ v1"
           alias:
           - name: "eqN_freq_onccX"
             version: "SFZ v2"
@@ -1843,7 +2004,6 @@ categories:
             unit: "Hz"
         velocity:
         - name: "eqN_vel2freq"
-          version: "SFZ v1"
           short_description:
             "Frequency change of the equalizer band with MIDI velocity, in Hertz."
           value:
@@ -1867,7 +2027,6 @@ categories:
         lfo: "✓"
         midi_cc:
         - name: "eqN_gainccX"
-          version: "SFZ v1"
           alias:
           - name: "eqN_gain_onccX"
             version: "SFZ v2"
@@ -1881,7 +2040,6 @@ categories:
         - name: "eqN_vel2gain"
           short_description:
             "Gain change of the equalizer band with MIDI velocity, in decibels."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -1898,7 +2056,19 @@ categories:
         min: 0
         max: 1
 
+    - name: "eqN_type"
+      short_description: "Sets the type of EQ filter."
+      version: "SFZ v2"
+      value:
+        type_name: "string"
+        default: "peak"
+        options:
+        - name: "peak"
+        - name: "lshelf"
+        - name: "hshelf"
+
   - name: "Filter"
+    id: "flt"
     opcodes:
     - name: "cutoff"
       version: "SFZ v1"
@@ -1916,7 +2086,6 @@ categories:
         lfo: "fillfo_depth"
         midi_cc:
         - name: "cutoff_ccN"
-          version: "SFZ v1"
           short_description:
             "The variation in the cutoff frequency when
             MIDI continuous controller N is received."
@@ -1939,24 +2108,20 @@ categories:
         - name: "cutoff_smoothccN"
           version: "SFZ v2"
           value:
-            type_name: "integer"
+            type_name: "float"
             default: 0
-            min: -9600
-            max: 9600
-            unit: "cents"
+            min: 0
+            unit: "ms"
         - name: "cutoff_stepccN"
           version: "SFZ v2"
           value:
             type_name: "integer"
             default: 0
-            min: -9600
-            max: 9600
-            unit: "cents"
+            min: 0
         - name: "cutoff_chanaft"
           short_description:
             "The variation in the cutoff frequency when MIDI channel aftertouch
             messages are received, in cents."
-          version: "SFZ v1"
           value:
             type_name: "integer"
             default: 0
@@ -1967,13 +2132,56 @@ categories:
           short_description:
             "The variation in the cutoff frequency when MIDI polyphonic aftertouch
             messages are received, in cents."
-          version: "SFZ v1"
           value:
             type_name: "integer"
             default: 0
             min: -9600
             max: 9600
             unit: "cents"
+      alias:
+      - name: "cutoff2"
+        version: "SFZ v2"
+        modulation:
+          midi_cc:
+          - name: "cutoff2_ccN"
+          - name: "cutoff2_onccN"
+          - name: "cutoff2_curveccN"
+          - name: "cutoff2_smoothccN"
+          - name: "cutoff2_stepccN"
+          - name: "cutoff2_chanaft"
+          - name: "cutoff2_polyaft"
+
+    - name: "fil_gain"
+      short_description: "Gain for lsh, hsh and peq filter types."
+      version: "ARIA"
+      value:
+        type_name: "float"
+        default: 0
+        unit: "dB"
+      modulation:
+        midi_cc:
+        - name: "fil_gain_onccN"
+      alias:
+      - name: "fil2_gain"
+        short_description: "Gain for lsh, hsh and peq filter types."
+        modulation:
+          midi_cc:
+          - name: "fil2_gain_onccN"
+
+    - name: "fil_keycenter"
+      version: "SFZ v1"
+      short_description: "Center key for filter keyboard tracking."
+      value:
+        type_name: "integer"
+        default: 60
+        min: 0
+        max: 127
+      alias:
+      - name: "fil2_keycenter"
+        short_description:
+          "Same as <a href='/opcodes/fil_keycenter'>fil_keycenter</a>,
+          but used to specify the type for the second filter."
+        version: "SFZ v2"
 
     - name: "fil_keytrack"
       version: "SFZ v1"
@@ -1985,15 +2193,12 @@ categories:
         min: 0
         max: 1200
         unit: "cents"
-
-    - name: "fil_keycenter"
-      version: "SFZ v1"
-      short_description: "Center key for filter keyboard tracking."
-      value:
-        type_name: "integer"
-        default: 60
-        min: 0
-        max: 127
+      alias:
+      - name: "fil2_keytrack"
+        short_description:
+          "Same as <a href='/opcodes/fil_keytrack'>fil_keytrack</a>,
+          but used to specify the type for the second filter."
+        version: "SFZ v2"
 
     - name: "fil_random"
       short_description:
@@ -2005,93 +2210,87 @@ categories:
         min: 0
         max: 9600
         unit: "cents"
+      alias:
+      - name: "cutoff_random"
+        version: "SFZ v2"
+      - name: "cutoff2_random"
+        version: "ARIA"
 
     - name: "fil_type"
       short_description: "Filter type."
       version: "SFZ v1"
+      alias:
+      - name: "filtype"
+      - name: "fil2_type"
+        short_description: "Filter type."
+        version: "SFZ v2"
       value:
         type_name: "string"
         default: "lpf_2p"
         options:
         - name: "lpf_1p"
-          description: "One-pole low pass filter (6dB/octave)"
+          description: "One-pole low pass filter (6dB/octave)."
         - name: "hpf_1p"
-          description: "One-pole high pass filter (6dB/octave)"
+          description: "One-pole high pass filter (6dB/octave)."
         - name: "lpf_2p"
-          description: "Two-pole low pass filter (12dB/octave)"
+          description: "Two-pole low pass filter (12dB/octave)."
         - name: "hpf_2p"
-          description: "Two-pole high pass filter (12dB/octave)"
+          description: "Two-pole high pass filter (12dB/octave)."
         - name: "bpf_2p"
-          description: "Two-pole band pass filter (12dB/octave)"
+          description: "Two-pole band pass filter (12dB/octave)."
         - name: "brf_2p"
-          description: "Two-pole band rejection filter (12dB/octave)"
+          description: "Two-pole band rejection filter (12dB/octave)."
         - name: "bpf_1p"
-          description: "One-pole band pass filter (6dB/octave)"
+          description: "One-pole band pass filter (6dB/octave)."
           version: "SFZ v2"
         - name: "brf_1p"
-          description: "One-pole band rejection filter (6dB/octave)"
+          description: "One-pole band rejection filter (6dB/octave)."
           version: "SFZ v2"
         - name: "apf_1p"
-          description: "One-pole all pass filter (6dB/octave)"
+          description: "One-pole all pass filter (6dB/octave)."
           version: "SFZ v2"
         - name: "lpf_2p_sv"
-          description: "Two-pole low pass filter (12dB/octave) state variable"
+          description: "Two-pole low pass state variable filter (12dB/octave)."
           version: "SFZ v2"
         - name: "hpf_2p_sv"
-          description: "Two-pole high pass filter (12dB/octave) state variable"
+          description: "Two-pole high pass state variable filter (12dB/octave)."
           version: "SFZ v2"
         - name: "bpf_2p_sv"
-          description: "Two-pole band pass filter (12dB/octave) state variable"
+          description: "Two-pole band pass state variable filter (12dB/octave)."
           version: "SFZ v2"
         - name: "brf_2p_sv"
-          description: "Two-pole band rejection filter (12dB/octave) state variable"
+          description: "Two-pole band rejection state variable filter (12dB/octave)."
           version: "SFZ v2"
         - name: "pkf_2p"
-          description: "Two-pole peak filter (12dB/octave)"
+          description: "Two-pole peak filter (12dB/octave)."
           version: "SFZ v2"
         - name: "lpf_4p"
-          description: "Four-pole low pass filter (24dB/octave)"
+          description: "Four-pole low pass filter (24dB/octave)."
           version: "SFZ v2"
         - name: "hpf_4p"
-          description: "Four-pole high pass filter (24dB/octave)"
+          description: "Four-pole high pass filter (24dB/octave)."
           version: "SFZ v2"
         - name: "lpf_6p"
-          description: "Six-pole low pass filter (36dB/octave)"
+          description: "Six-pole low pass filter (36dB/octave)."
           version: "SFZ v2"
         - name: "hpf_6p"
-          description: "Six-pole high pass filter (36dB/octave)"
+          description: "Six-pole high pass filter (36dB/octave)."
           version: "SFZ v2"
         - name: "comb"
-          description: "Comb filter"
+          description: "Comb filter."
           version: "SFZ v2"
         - name: "pink"
-          description: "Pink filter"
+          description: "Pink filter."
           version: "SFZ v2"
         - name: "lsh"
-          description: "Low shelf"
+          description: "Low shelf."
           version: "ARIA"
         - name: "hsh"
-          description: "High shelf"
+          description: "High shelf."
           version: "ARIA"
         - name: "peq"
-          description: "Parametric EQ"
+          description: "Parametric EQ."
           version: "ARIA"
-
-    - name: "fil_gain"
-      short_description: "Gain for lsh, hsh and peq filter types."
-      version: "ARIA"
-      value:
-        type_name: "float"
-        default: "0"
-        unit: "dB"
-
-    - name: "fil2_gain"
-      short_description: "Gain for lsh, hsh and peq filter types."
-      version: "ARIA"
-      value:
-        type_name: "float"
-        default: "0"
-        unit: "dB"
 
     - name: "fil_veltrack"
       version: "SFZ v1"
@@ -2104,6 +2303,12 @@ categories:
         min: -9600
         max: 9600
         unit: "cents"
+      alias:
+      - name: "fil2_veltrack"
+        short_description:
+          "Same as <a href='/opcodes/fil_veltrack'>fil_veltrack</a>,
+          but used to specify the type for the second filter."
+        version: "SFZ v2"
 
     - name: "resonance"
       short_description: "The filter cutoff resonance value, in decibels."
@@ -2115,6 +2320,8 @@ categories:
         max: 40
         unit: "dB"
       modulation:
+        envelope: "✓"
+        lfo: "✓"
         midi_cc:
         - name: "resonance_onccN"
           version: "SFZ v2"
@@ -2138,197 +2345,58 @@ categories:
             type_name: "float"
             default: 0
             min: 0
-            max: 40
-            unit: "dB"
+            unit: "ms"
         - name: "resonance_stepccN"
           version: "SFZ v2"
           value:
-            type_name: "float"
+            type_name: "integer"
             default: 0
             min: 0
-            max: 40
-            unit: "dB"
+      alias:
+      - name: "resonance2"
+        version: "SFZ v2"
+        modulation:
+          midi_cc:
+          - name: "resonance2_onccN"
+            value:
+              type_name: "float"
+              default: 0
+              min: 0
+              max: 40
+              unit: "dB"
+            alias:
+            - name: "resonance2_ccN"
+              version: "SFZ v2" # TODO: Inherit from the last defined?
+          - name: "resonance2_curveccN"
+            value:
+              type_name: "integer"
+              min: 0
+              max: 255
+          - name: "resonance2_smoothccN"
+            value:
+              type_name: "float"
+              default: 0
+              min: 0
+              unit: "ms"
+          - name: "resonance2_stepccN"
+            value:
+              type_name: "integer"
+              default: 0
+              min: 0
 
-    - name: "cutoff2"
-      version: "SFZ v2"
+    - name: "resonance_random"
       short_description:
-        "Same as <a href='/opcodes/cutoff'>cutoff</a>,
-        but used to specify the cutoff for the second filter."
-      value:
-        type_name: "float"
-        default: "filter disabled"
-        min: 0
-        max: "SampleRate / 2"
-        unit: "Hz"
-      modulation:
-        envelope: "✓"
-        lfo: "✓"
-        midi_cc:
-        - name: "cutoff2_onccN"
-          version: "SFZ v2"
-          short_description:
-            "The variation in the cutoff frequency
-            when MIDI continuous controller N is received."
-          value:
-            type_name: "integer"
-            default: 0
-            min: -9600
-            max: 9600
-            unit: "cents"
-        - name: "cutoff2_curveccN"
-          version: "SFZ v2"
-          value:
-            type_name: "integer"
-            min: 0
-            max: 255
-        - name: "cutoff2_smoothccN"
-          version: "SFZ v2"
-          value:
-            type_name: "integer"
-            default: 0
-            min: -9600
-            max: 9600
-            unit: "cents"
-        - name: "cutoff2_stepccN"
-          version: "SFZ v2"
-          value:
-            type_name: "integer"
-            default: 0
-            min: -9600
-            max: 9600
-            unit: "cents"
-
-    - name: "fil2_keycenter"
-      short_description:
-        "Same as <a href='/opcodes/fil_keycenter'>fil_keycenter</a>,
-        but used to specify the type for the second filter."
-      version: "SFZ v2"
-      value:
-        type_name: "integer"
-        default: 60
-        min: 0
-        max: 127
-
-    - name: "fil2_keytrack"
-      short_description:
-        "Same as <a href='/opcodes/fil_keytrack'>fil_keytrack</a>,
-        but used to specify the type for the second filter."
-      version: "SFZ v2"
-      value:
-        type_name: "integer"
-        default: 0
-        min: 0
-        max: 1200
-        unit: "cents"
-
-    - name: "fil2_type"
-      short_description: "Filter type."
-      version: "SFZ v2"
-      value:
-        type_name: "string"
-        default: "lpf_2p"
-        options:
-        - name: "lpf_1p"
-          description: "One-pole low pass filter (6dB/octave)."
-        - name: "hpf_1p"
-          description: "One-pole high pass filter (6dB/octave)."
-        - name: "lpf_2p"
-          description: "Two-pole low pass filter (12dB/octave)."
-        - name: "hpf_2p"
-          description: "Two-pole high pass filter (12dB/octave)."
-        - name: "bpf_2p"
-          description: "Two-pole band pass filter (12dB/octave)."
-        - name: "brf_2p"
-          description: "Two-pole band rejection filter (12dB/octave)."
-        - name: "bpf_1p"
-          description: "One-pole band pass filter (6dB/octave)."
-        - name: "brf_1p"
-          description: "One-pole band rejection filter (6dB/octave)."
-        - name: "apf_1p"
-          description: "One-pole all pass filter (6dB/octave)."
-        - name: "lpf_2p_sv"
-          description: "Two-pole low pass state variable filter (12dB/octave)."
-        - name: "hpf_2p_sv"
-          description: "Two-pole high pass state variable filter (12dB/octave)."
-        - name: "bpf_2p_sv"
-          description: "Two-pole band pass state variable filter (12dB/octave)."
-        - name: "brf_2p_sv"
-          description: "Two-pole band rejection state variable filter (12dB/octave)."
-        - name: "pkf_2p"
-          description: "Two-pole peak filter (12dB/octave)."
-        - name: "lpf_4p"
-          description: "Four-pole low pass filter (24dB/octave)."
-        - name: "hpf_4p"
-          description: "Four-pole high pass filter (24dB/octave)."
-        - name: "lpf_6p"
-          description: "Six-pole low pass filter (36dB/octave)."
-        - name: "hpf_6p"
-          description: "Six-pole high pass filter (36dB/octave)."
-        - name: "comb"
-          description: "Comb filter."
-        - name: "pink"
-          description: "Pink filter."
-
-    - name: "fil2_veltrack"
-      short_description:
-        "Same as <a href='/opcodes/fil_veltrack'>fil_veltrack</a>,
-        but used to specify the type for the second filter."
-      version: "SFZ v2"
-      value:
-        type_name: "integer"
-        default: 0
-        min: -9600
-        max: 9600
-        unit: "cents"
-
-    - name: "resonance2"
-      version: "SFZ v2"
-      short_description:
-        "Same as <a href='/opcodes/resonance'>resonance</a>,
-        but used to specify the resonance for the second filter."
+        "Filter cutoff resonance random value, in decibels."
+      version: "ARIA"
       value:
         type_name: "float"
         default: 0
         min: 0
         max: 40
         unit: "dB"
-      modulation:
-        envelope: "✓"
-        lfo: "✓"
-        midi_cc:
-        - name: "resonance2_onccN"
-          version: "SFZ v2"
-          value:
-            type_name: "float"
-            default: 0
-            min: 0
-            max: 40
-            unit: "dB"
-        - name: "resonance2_curveccN"
-          version: "SFZ v2"
-          value:
-            type_name: "integer"
-            min: 0
-            max: 255
-        - name: "resonance2_smoothccN"
-          version: "SFZ v2"
-          value:
-            type_name: "float"
-            default: 0
-            min: 0
-            max: 40
-            unit: "dB"
-        - name: "resonance2_stepccN"
-          version: "SFZ v2"
-          value:
-            type_name: "float"
-            default: 0
-            min: 0
-            max: 40
-            unit: "dB"
 
     - name: "noise_filter"
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       short_description: ""
       value:
         type_name: "string"
@@ -2353,7 +2421,7 @@ categories:
         - name: "pink"
 
     - name: "noise_stereo"
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       short_description: ""
       value:
         type_name: "string"
@@ -2362,7 +2430,7 @@ categories:
         - name: "off"
 
     - name: "noise_level"
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       short_description: ""
       value:
         type_name: "float"
@@ -2372,24 +2440,20 @@ categories:
       modulation:
         midi_cc:
         - name: "noise_level_onccN"
-          version: "Cakewalk SFZ v2"
-          short_description: ""
           value:
             type_name: "float"
             min: -96
             max: 24
             unit: "dB"
         - name: "noise_level_smoothccN"
-          version: "Cakewalk SFZ v2"
-          short_description: ""
           value:
             type_name: "float"
-            min: -96
-            max: 24
-            unit: "dB"
+            min: 0
+            default: 0
+            unit: "ms"
 
     - name: "noise_step"
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       short_description: ""
       value:
         type_name: "integer"
@@ -2398,15 +2462,13 @@ categories:
       modulation:
         midi_cc:
         - name: "noise_step_onccN"
-          version: "Cakewalk SFZ v2"
-          short_description: ""
           value:
             type_name: "integer"
             min: 0
             max: 100
 
     - name: "noise_tone"
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       short_description: ""
       value:
         type_name: "integer"
@@ -2415,14 +2477,13 @@ categories:
       modulation:
         midi_cc:
         - name: "noise_tone_onccN"
-          version: "Cakewalk SFZ v2"
-          short_description: ""
           value:
             type_name: "integer"
             min: 0
             max: 100
 
   - name: "Pitch"
+    id: "ptc"
     opcodes:
     - name: "bend_up"
       version: "SFZ v1"
@@ -2434,6 +2495,8 @@ categories:
         min: -9600
         max: 9600
         unit: "cents"
+      alias:
+      - name: "bendup"
 
     - name: "bend_down"
       version: "SFZ v1"
@@ -2445,16 +2508,20 @@ categories:
         min: -9600
         max: 9600
         unit: "cents"
+      alias:
+      - name: "benddown"
 
     - name: "bend_smooth"
+      version: "SFZ v2"
       short_description:
         "Pitch bend smoothness. Adds “inertia” to pitch bends,
         so fast movements of the pitch bend wheel will have a delayed effect
         on the pitch change."
-      version: "ARIA"
       value:
-        type_name: "integer"
+        type_name: "float"
+        min: 0
         default: 0
+        unit: "ms"
 
     - name: "bend_step"
       version: "SFZ v1"
@@ -2465,11 +2532,17 @@ categories:
         min: 1
         max: 1200
         unit: "cents"
+      alias:
+      - name: "bendstep"
 
-    - name: "pitch"
-      version: "ARIA"
-      short_description:
-        "Pitch change in cents. ARIA alias for <a href='/opcodes/tune'>tune</a>."
+    - name: "tune"
+      version: "SFZ v1"
+      short_description: "The fine tuning for the sample, in cents."
+      alias:
+      - name: "pitch"
+        version: "ARIA"
+        short_description:
+          "Pitch change in cents. ARIA alias for <a href='/opcodes/tune'>tune</a>."
       value:
         type_name: "integer"
         default: 0
@@ -2500,6 +2573,11 @@ categories:
             max: 255
         - name: "pitch_smoothccN"
           version: "SFZ v2"
+          value:
+            type_name: "float"
+            default: 0
+            min: 0
+            unit: "ms"
           alias:
           - name: "tune_smoothccN"
             version: "ARIA"
@@ -2510,8 +2588,46 @@ categories:
             version: "ARIA"
           value:
             min: 0
-            max: 1200
-            unit: "cents"
+            default: 0
+
+    - name: "group_tune"
+      short_description:
+        "ARIA extension, like <a href='/opcodes/tune'>tune</a>,
+        but affecting everything when set under
+        the ‹<a href='/headers/group'>group</a>› header."
+      version: "ARIA"
+      value:
+        type_name: "integer"
+        default: 0
+        min: -100
+        max: 100
+        unit: "cents"
+
+    - name: "master_tune"
+      short_description:
+        "ARIA extension, like <a href='/opcodes/tune'>tune</a>,
+        but affecting everything when set under
+        the ‹<a href='/headers/master'>master</a>› header."
+      version: "ARIA"
+      value:
+        type_name: "integer"
+        default: 0
+        min: -100
+        max: 100
+        unit: "cents"
+
+    - name: "global_tune"
+      short_description:
+        "ARIA extension, like <a href='/opcodes/tune'>tune</a>,
+        but affecting everything when set under
+        the ‹<a href='/headers/global'>global</a>› header."
+      version: "ARIA"
+      value:
+        type_name: "integer"
+        default: 0
+        min: -100
+        max: 100
+        unit: "cents"
 
     - name: "pitch_keycenter"
       short_description: "Root key for the <a href='/opcodes/sample'>sample</a>."
@@ -2519,7 +2635,7 @@ categories:
       value:
         type_name: "integer"
         default: 60 # (C4)
-        min: -127
+        min: 0
         max: 127
 
     - name: "pitch_keytrack"
@@ -2532,6 +2648,9 @@ categories:
         default: 100
         min: -1200
         max: 1200
+      alias:
+      - name: "tune_keytrack"
+        version: "ARIA"
 
     - name: "pitch_random"
       short_description: "Random tuning for the region, in cents."
@@ -2542,6 +2661,9 @@ categories:
         min: 0
         max: 9600
         unit: "cents"
+      alias:
+      - name: "tune_random"
+        version: "ARIA"
 
     - name: "pitch_veltrack"
       short_description:
@@ -2554,6 +2676,9 @@ categories:
         min: -9600
         max: 9600
         unit: "cents"
+      alias:
+      - name: "tune_veltrack"
+        version: "ARIA"
 
     - name: "transpose"
       short_description:
@@ -2565,16 +2690,6 @@ categories:
         default: 0
         min: -127
         max: 127
-
-    - name: "tune"
-      version: "SFZ v1"
-      short_description: "The fine tuning for the sample, in cents."
-      value:
-        type_name: "integer"
-        default: 0
-        min: -100
-        max: 100
-        unit: "cents"
 
     - name: "bend_stepup"
       version: "SFZ v2"
@@ -2602,9 +2717,14 @@ categories:
   short_description: "Modulation opcodes comprise of all the LFO and EG controls."
   types:
   - name: "Envelope Generators"
+    id: "eg"
     url: "/modulations/envelope_generators"
     opcodes:
     - name: "ampeg_attack"
+      alias:
+      - name: "amp_attack"
+        version: "Cakewalk"
+        deprecated: true
       short_description: "EG attack time."
       version: "SFZ v1"
       value:
@@ -2616,7 +2736,6 @@ categories:
       modulation:
         midi_cc:
         - name: "ampeg_attackccN"
-          version: "SFZ v1"
           alias:
           - name: "ampeg_attack_onccN"
             version: "SFZ v2"
@@ -2629,7 +2748,10 @@ categories:
         velocity:
         - name: "ampeg_vel2attack"
           short_description: "Velocity effect on EG attack time."
-          version: "SFZ v1"
+          alias:
+          - name: "amp_vel2attack"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -2640,6 +2762,10 @@ categories:
     - name: "ampeg_decay"
       short_description: "EG decay time."
       version: "SFZ v1"
+      alias:
+      - name: "amp_decay"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -2649,7 +2775,6 @@ categories:
       modulation:
         midi_cc:
         - name: "ampeg_decayccN"
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -2659,6 +2784,7 @@ categories:
           - name: "ampeg_decay_onccN"
             version: "SFZ v2"
         - name: "ampeg_decay_curveccN"
+          version: "ARIA"
           value:
             type_name: "integer"
             min: 0
@@ -2666,7 +2792,10 @@ categories:
         velocity:
         - name: "ampeg_vel2decay"
           short_description: "Velocity effect on pitch EG decay time."
-          version: "SFZ v1"
+          alias:
+          - name: "amp_vel2decay"
+            deprecated: true
+            version: "Cakewalk"
           value:
             type_name: "float"
             default: 0
@@ -2677,6 +2806,10 @@ categories:
     - name: "ampeg_delay"
       short_description: "EG delay time."
       version: "SFZ v1"
+      alias:
+      - name: "amp_delay"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -2687,7 +2820,6 @@ categories:
         envelope: "✓"
         midi_cc:
         - name: "ampeg_delayccN"
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -2699,7 +2831,10 @@ categories:
         velocity:
         - name: "ampeg_vel2delay"
           short_description: "Velocity effect on EG delay time."
-          version: "SFZ v1"
+          alias:
+          - name: "amp_vel2delay"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -2710,6 +2845,10 @@ categories:
     - name: "ampeg_hold"
       version: "SFZ v1"
       short_description: "EG hold time."
+      alias:
+      - name: "amp_hold"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -2720,7 +2859,6 @@ categories:
         envelope: "✓"
         midi_cc:
         - name: "ampeg_holdccN"
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -2729,7 +2867,8 @@ categories:
           alias:
           - name: "ampeg_hold_onccN"
             version: "SFZ v2"
-        - name: "ampeg_hole_curveccN"
+        - name: "ampeg_hold_curveccN"
+          version: "ARIA"
           value:
             type_name: "integer"
             min: 0
@@ -2737,7 +2876,10 @@ categories:
         velocity:
         - name: "ampeg_vel2hold"
           short_description: "Velocity effect on EG hold time."
-          version: "SFZ v1"
+          alias:
+          - name: "amp_vel2hold"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -2748,16 +2890,19 @@ categories:
     - name: "ampeg_release"
       short_description: "EG release time (after note release)."
       version: "SFZ v1"
+      alias:
+      - name: "amp_release"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
-        default: 0
+        default: 0.001
         min: 0
         max: 100
         unit: "seconds"
       modulation:
         midi_cc:
         - name: "ampeg_releaseccN"
-          version: "SFZ v1"
           alias:
           - name: "ampeg_release_onccN"
             version: "SFZ v2"
@@ -2770,7 +2915,10 @@ categories:
         velocity:
         - name: "ampeg_vel2release"
           short_description: "Velocity effect on EG release time."
-          version: "SFZ v1"
+          alias:
+          - name: "amp_vel2release"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -2781,6 +2929,10 @@ categories:
     - name: "ampeg_sustain"
       short_description: "EG sustain level, in percentage."
       version: "SFZ v1"
+      alias:
+      - name: "amp_sustain"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 100
@@ -2790,7 +2942,6 @@ categories:
       modulation:
         midi_cc:
         - name: "ampeg_sustainccN"
-          version: "SFZ v1"
           alias:
           - name: "ampeg_sustain_onccN"
             version: "SFZ v2"
@@ -2801,6 +2952,7 @@ categories:
             max: 100
             unit: "%"
         - name: "ampeg_sustain_curveccN"
+          version: "ARIA"
           value:
             type_name: "integer"
             min: 0
@@ -2808,7 +2960,10 @@ categories:
         velocity:
         - name: "ampeg_vel2sustain"
           short_description: "Velocity effect on EG sustain level, in percentage."
-          version: "SFZ v1"
+          alias:
+          - name: "amp_vel2sustain"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -2829,7 +2984,6 @@ categories:
         envelope: "✓"
         midi_cc:
         - name: "ampeg_startccN"
-          version: "SFZ v1"
           alias:
           - name: "ampeg_start_onccN"
             version: "SFZ v2"
@@ -2852,7 +3006,7 @@ categories:
       short_description: "Specifies the curvature of decay stage of the envelope."
       value:
         type_name: "float"
-        default: 0
+        default: -10.3616
 
     - name: "ampeg_decay_zero"
       short_description: "Specifies how decay time is calculated."
@@ -2877,14 +3031,14 @@ categories:
       version: "ARIA"
       value:
         type_name: "float"
-        default: 0
+        default: -10.3616
 
     - name: "ampeg_release_zero"
       short_description: "Specifies how release time is calculated."
       version: "ARIA"
       value:
         type_name: "integer"
-        default: 1
+        default: 0
         min: 0
         max: 1
 
@@ -2923,7 +3077,7 @@ categories:
       version: "ARIA"
       value:
         type_name: "integer"
-        default: 1
+        default: 0
         min: 0
         max: 1
 
@@ -2971,7 +3125,7 @@ categories:
       version: "ARIA"
       value:
         type_name: "integer"
-        default: 1
+        default: 0
         min: 0
         max: 1
 
@@ -2987,6 +3141,10 @@ categories:
     - name: "fileg_attack"
       short_description: "EG attack time."
       version: "SFZ v1"
+      alias:
+      - name: "fil_attack"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3008,7 +3166,10 @@ categories:
         velocity:
         - name: "fileg_vel2attack"
           short_description: "Velocity effect on EG attack time."
-          version: "SFZ v1"
+          alias:
+          - name: "fil_vel2attack"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3019,6 +3180,10 @@ categories:
     - name: "fileg_decay"
       short_description: "EG decay time."
       version: "SFZ v1"
+      alias:
+      - name: "fil_decay"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3039,7 +3204,10 @@ categories:
         velocity:
         - name: "fileg_vel2decay"
           short_description: "Velocity effect on filter EG decay time."
-          version: "SFZ v1"
+          alias:
+          - name: "fil_vel2decay"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3050,6 +3218,10 @@ categories:
     - name: "fileg_delay"
       short_description: "EG delay time."
       version: "SFZ v1"
+      alias:
+      - name: "fil_delay"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3071,7 +3243,10 @@ categories:
         velocity:
         - name: "fileg_vel2delay"
           short_description: "Velocity effect on filter EG delay time."
-          version: "SFZ v1"
+          alias:
+          - name: "fil_vel2delay"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3082,6 +3257,10 @@ categories:
     - name: "fileg_depth"
       short_description: "Envelope depth."
       version: "SFZ v1"
+      alias:
+      - name: "fil_depth"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "integer"
         default: 0
@@ -3093,17 +3272,21 @@ categories:
         - name: "fileg_depth_onccN"
           version: "ARIA"
           value:
-            type_name: "float"
+            type_name: "integer"
             default: 0
-            min: -1
-            max: 1
+            min: -12000
+            max: 12000
+            unit: "cents"
           alias:
           - name: "fileg_depthccN"
         velocity:
         - name: "fileg_vel2depth"
           short_description:
             "Velocity effect on EG depth, in cents for pitch or filter cutoff."
-          version: "SFZ v1"
+          alias:
+          - name: "fil_vel2depth"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "integer"
             default: 0
@@ -3114,6 +3297,10 @@ categories:
     - name: "fileg_hold"
       short_description: "EG hold time."
       version: "SFZ v1"
+      alias:
+      - name: "fil_hold"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3135,7 +3322,10 @@ categories:
         velocity:
         - name: "fileg_vel2hold"
           short_description: "Velocity effect on EG hold time."
-          version: "SFZ v1"
+          alias:
+          - name: "fil_vel2hold"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3146,6 +3336,10 @@ categories:
     - name: "fileg_release"
       short_description: "EG release time (after note release)."
       version: "SFZ v1"
+      alias:
+      - name: "fil_release"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3167,7 +3361,10 @@ categories:
         velocity:
         - name: "fileg_vel2release"
           short_description: "Velocity effect on EG release time."
-          version: "SFZ v1"
+          alias:
+          - name: "fil_vel2release"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3201,6 +3398,10 @@ categories:
     - name: "fileg_sustain"
       short_description: "EG sustain level, in percentage."
       version: "SFZ v1"
+      alias:
+      - name: "fil_sustain"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3222,7 +3423,10 @@ categories:
         velocity:
         - name: "fileg_vel2sustain"
           short_description: "Velocity effect on EG sustain level, in percentage."
-          version: "SFZ v1"
+          alias:
+          - name: "fil_vel2sustain"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3233,6 +3437,10 @@ categories:
     - name: "pitcheg_attack"
       short_description: "EG attack time."
       version: "SFZ v1"
+      alias:
+      - name: "pitch_attack"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3246,7 +3454,10 @@ categories:
         velocity:
         - name: "pitcheg_vel2attack"
           short_description: "Velocity effect on EG attack time."
-          version: "SFZ v1"
+          alias:
+          - name: "pitch_vel2attack"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3257,6 +3468,10 @@ categories:
     - name: "pitcheg_decay"
       short_description: "EG decay time."
       version: "SFZ v1"
+      alias:
+      - name: "pitch_decay"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3274,8 +3489,11 @@ categories:
             max: 100
         velocity:
         - name: "pitcheg_vel2decay"
-          short_description: "Velocity effect on filter EG decay time."
-          version: "SFZ v1"
+          short_description: "Velocity effect on pitch EG decay time."
+          alias:
+          - name: "pitch_vel2decay"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3286,6 +3504,10 @@ categories:
     - name: "pitcheg_delay"
       short_description: "EG delay time."
       version: "SFZ v1"
+      alias:
+      - name: "pitch_delay"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3304,8 +3526,11 @@ categories:
             max: 100
         velocity:
         - name: "pitcheg_vel2delay"
-          short_description: "Velocity effect on filter EG delay time."
-          version: "SFZ v1"
+          short_description: "Velocity effect on pitch EG delay time."
+          alias:
+          - name: "pitch_vel2delay"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3316,6 +3541,10 @@ categories:
     - name: "pitcheg_depth"
       short_description: "Envelope depth."
       version: "SFZ v1"
+      alias:
+      - name: "pitch_depth"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "integer"
         default: 0
@@ -3327,15 +3556,21 @@ categories:
         - name: "pitcheg_depth_onccN"
           version: "ARIA"
           value:
-            type_name: "float"
+            type_name: "integer"
             default: 0
-            min: -1
-            max: 1
+            min: -12000
+            max: 12000
+            unit: "cents"
+          alias:
+          - name: "pitcheg_depthccN"
         velocity:
         - name: "pitcheg_vel2depth"
           short_description:
             "Velocity effect on EG depth, in cents for pitch or filter cutoff."
-          version: "SFZ v1"
+          alias:
+          - name: "pitch_vel2depth"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "integer"
             default: 0
@@ -3346,6 +3581,10 @@ categories:
     - name: "pitcheg_hold"
       short_description: "EG hold time."
       version: "SFZ v1"
+      alias:
+      - name: "pitch_hold"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3365,7 +3604,10 @@ categories:
         velocity:
         - name: "pitcheg_vel2hold"
           short_description: "Velocity effect on EG hold time."
-          version: "SFZ v1"
+          alias:
+          - name: "pitch_vel2hold"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3376,6 +3618,10 @@ categories:
     - name: "pitcheg_release"
       version: "SFZ v1"
       short_description: "EG release time (after note release)."
+      alias:
+      - name: "pitch_release"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3395,7 +3641,10 @@ categories:
         velocity:
         - name: "pitcheg_vel2release"
           short_description: "Velocity effect on EG release time."
-          version: "SFZ v1"
+          alias:
+          - name: "pitch_vel2release"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3427,6 +3676,10 @@ categories:
     - name: "pitcheg_sustain"
       short_description: "EG sustain level, in percentage."
       version: "SFZ v1"
+      alias:
+      - name: "pitch_sustain"
+        version: "Cakewalk"
+        deprecated: true
       value:
         type_name: "float"
         default: 0
@@ -3446,7 +3699,10 @@ categories:
         velocity:
         - name: "pitcheg_vel2sustain"
           short_description: "Velocity effect on EG sustain level, in percentage."
-          version: "SFZ v1"
+          alias:
+          - name: "pitch_vel2sustain"
+            version: "Cakewalk"
+            deprecated: true
           value:
             type_name: "float"
             default: 0
@@ -3462,12 +3718,13 @@ categories:
       short_description: ""
       version: "SFZ v2"
       value:
+        type_name: "float"
         unit: "seconds"
       modulation:
         midi_cc:
         - name: "egN_timeX_onccY"
-          version: "SFZ v2"
           value:
+            type_name: "float"
             unit: "seconds"
 
     - name: "egN_levelX"
@@ -3482,16 +3739,22 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_levelX_onccY"
-          version: "SFZ v2"
           value:
             type_name: "float"
             default: 0
             min: -1
             max: 1
 
+    - name: "egN_ampeg"
+      short_description: ""
+      version: "ARIA"
+
     - name: "egN_shapeX"
       short_description: ""
       version: "SFZ v2"
+      value:
+        type_name: "float"
+        default: 0
 
     - name: "egN_curveX"
       short_description:
@@ -3516,7 +3779,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_volume_onccX"
-          version: "SFZ v2"
 
     - name: "egN_amplitude"
       short_description: ""
@@ -3524,7 +3786,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_amplitude_onccX"
-          version: "SFZ v2"
 
     - name: "egN_pan"
       short_description: ""
@@ -3532,7 +3793,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_pan_onccX"
-          version: "SFZ v2"
 
     - name: "egN_width"
       short_description: ""
@@ -3540,7 +3800,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_width_onccX"
-          version: "SFZ v2"
 
     - name: "egN_pan_curve"
       short_description: ""
@@ -3548,7 +3807,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_pan_curveccX"
-          version: "SFZ v2"
 
     - name: "egN_freq_lfoX"
       short_description: ""
@@ -3568,7 +3826,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_pitch_onccX"
-          version: "SFZ v2"
 
     - name: "egN_cutoff"
       short_description: ""
@@ -3576,7 +3833,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_cutoff_onccX"
-          version: "SFZ v2"
 
     - name: "egN_cutoff2"
       short_description: ""
@@ -3584,7 +3840,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_cutoff2_onccX"
-          version: "SFZ v2"
 
     - name: "egN_resonance"
       short_description: ""
@@ -3592,7 +3847,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_resonance_onccX"
-          version: "SFZ v2"
 
     - name: "egN_resonance2"
       short_description: ""
@@ -3600,7 +3854,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_resonance2_onccX"
-          version: "SFZ v2"
 
     - name: "egN_eqXfreq"
       short_description: ""
@@ -3608,7 +3861,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_eqXfreq_onccY"
-          version: "SFZ v2"
 
     - name: "egN_eqXbw"
       short_description: ""
@@ -3616,7 +3868,6 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_eqXbw_onccY"
-          version: "SFZ v2"
 
     - name: "egN_eqXgain"
       short_description: ""
@@ -3624,81 +3875,65 @@ categories:
       modulation:
         midi_cc:
         - name: "egN_eqXgain_onccY"
-          version: "SFZ v2"
 
     - name: "egN_decim"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "egN_decim_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "egN_bitred"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "egN_bitred_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "egN_rectify"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "egN_rectify_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "egN_ringmod"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "egN_ringmod_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "egN_noiselevel"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "egN_noiselevel_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "egN_noisestep"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "egN_noisestep_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "egN_noisetone"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "egN_noisetone_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "egN_driveshape"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "egN_driveshape_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
   - name: "LFO"
+    id: "lfo"
     url: "/modulations/lfo"
     short_description: "Low Frequency Oscillator."
     opcodes:
@@ -3724,7 +3959,6 @@ categories:
       modulation:
         midi_cc:
         - name: "amplfo_depthccN"
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3737,7 +3971,6 @@ categories:
         - name: "amplfo_depthchanaft"
           short_description:
             "LFO depth when channel aftertouch MIDI messages are received."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3747,7 +3980,6 @@ categories:
         - name: "amplfo_depthpolyaft"
           short_description:
             "LFO depth when polyphonic aftertouch MIDI messages are received."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3777,7 +4009,6 @@ categories:
       modulation:
         midi_cc:
         - name: "amplfo_freqccN"
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3788,7 +4019,6 @@ categories:
           short_description:
             "LFO frequency change when channel aftertouch
             MIDI messages are received, in Hertz."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3799,7 +4029,6 @@ categories:
           short_description:
             "LFO frequency change when polyphonic aftertouch
             MIDI messages are received, in Hertz."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3829,7 +4058,6 @@ categories:
       modulation:
         midi_cc:
         - name: "fillfo_depthccN"
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3842,7 +4070,6 @@ categories:
         - name: "fillfo_depthchanaft"
           short_description:
             "LFO depth when channel aftertouch MIDI messages are received."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3852,7 +4079,6 @@ categories:
         - name: "fillfo_depthpolyaft"
           short_description:
             "LFO depth when polyphonic aftertouch MIDI messages are received."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3882,7 +4108,6 @@ categories:
       modulation:
         midi_cc:
         - name: "fillfo_freqccN"
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3893,7 +4118,6 @@ categories:
           short_description:
             "LFO frequency change when channel aftertouch
             MIDI messages are received, in Hertz."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3904,7 +4128,6 @@ categories:
           short_description:
             "LFO frequency change when polyphonic aftertouch
             MIDI messages are received, in Hertz."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3934,7 +4157,6 @@ categories:
       modulation:
         midi_cc:
         - name: "pitchlfo_depthccN"
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3947,7 +4169,6 @@ categories:
         - name: "pitchlfo_depthchanaft"
           short_description:
             "LFO depth when channel aftertouch MIDI messages are received."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3957,7 +4178,6 @@ categories:
         - name: "pitchlfo_depthpolyaft"
           short_description:
             "LFO depth when polyphonic aftertouch MIDI messages are received."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3987,7 +4207,6 @@ categories:
       modulation:
         midi_cc:
         - name: "pitchlfo_freqccN"
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -3998,7 +4217,6 @@ categories:
           short_description:
             "LFO frequency change when channel aftertouch
             MIDI messages are received, in Hertz."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -4009,7 +4227,6 @@ categories:
           short_description:
             "LFO frequency change when polyphonic aftertouch
             MIDI messages are received, in Hertz."
-          version: "SFZ v1"
           value:
             type_name: "float"
             default: 0
@@ -4021,24 +4238,14 @@ categories:
       short_description: "The base frequency of LFO number N, in Hertz."
       version: "SFZ v2"
       value:
-        type_name: "integer"
+        type_name: "float"
         unit: "Hz"
       modulation:
         envelope: "egN_freq_lfoX"
         midi_cc:
         - name: "lfoN_freq_onccX"
-          version: "SFZ v2"
         - name: "lfoN_freq_smoothccX"
-          version: "SFZ v2"
         - name: "lfoN_freq_stepccX"
-          version: "SFZ v2"
-      see_also:
-      - "lfoN_delay"
-      - "lfoN_fade"
-      - "lfoN_offset"
-      - "lfoN_ratio"
-      - "lfoN_scale"
-      - "lfoN_wave"
 
     - name: "lfoN_delay"
       short_description: "Onset delay for LFO number N."
@@ -4051,14 +4258,6 @@ categories:
         envelope: "egN_freq_lfoX"
         midi_cc:
         - name: "lfoN_delay_onccX"
-          version: "SFZ v2"
-      see_also:
-      - "lfoN_fade"
-      - "lfoN_freq"
-      - "lfoN_offset"
-      - "lfoN_ratio"
-      - "lfoN_scale"
-      - "lfoN_wave"
 
     - name: "lfoN_fade"
       short_description: "Fade-in time for LFO number N."
@@ -4068,16 +4267,8 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_fade_onccX"
-          version: "SFZ v2"
           value:
             type_name: "float"
-      see_also:
-      - "lfoN_delay"
-      - "lfoN_freq"
-      - "lfoN_offset"
-      - "lfoN_ratio"
-      - "lfoN_scale"
-      - "lfoN_wave"
 
     - name: "lfoN_phase"
       short_description: "Initial phase shift for LFO number N."
@@ -4090,7 +4281,6 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_phase_onccX"
-          version: "SFZ v2"
 
     - name: "lfoN_count"
       short_description: "Number of LFO repetitions for LFO N before the LFO stops."
@@ -4103,35 +4293,36 @@ categories:
       version: "SFZ v2"
       value:
         type_name: "integer"
+        default: 1
       modulation:
         midi_cc:
         - name: "lfoN_wave_onccX"
           version: "ARIA"
-      see_also:
-      - "lfoN_delay"
-      - "lfoN_fade"
-      - "lfoN_freq"
-      - "lfoN_offset"
-      - "lfoN_ratio"
-      - "lfoN_scale"
-
-    - name: "lfoN_waveX"
-      short_description:
-        "Select the waveform type used for the waveform number X (max 8)
-        for LFO number N, with the same allowed values as
-        <a href='/opcodes/lfoN_wave'>lfoN_wave</a> normally can use."
-      version: "ARIA"
-      value:
-        type_name: "integer"
-        default: 1
+      alias:
+      - name: "lfoN_waveX"
+        short_description:
+          "Select the waveform type used for the waveform number X (max 8)
+          for LFO number N, with the same allowed values as
+          <a href='/opcodes/lfoN_wave'>lfoN_wave</a> normally can use."
+        version: "ARIA"
 
     - name: "lfoN_steps"
-      short_description: ""
+      short_description: "Number of steps in LFO step sequencer."
       version: "SFZ v2"
+      value:
+        type_name: "integer"
 
     - name: "lfoN_stepX"
-      short_description: ""
+      short_description: "Level of the step number X in LFO step sequencer."
       version: "SFZ v2"
+      value:
+        type_name: "float"
+        min: -100
+        max: 100
+        unit: "percent"
+      modulation:
+        midi_cc:
+        - name: "lfoN_stepX_onccY"
 
     - name: "lfoN_smooth"
       short_description: ""
@@ -4139,7 +4330,6 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_smooth_onccX"
-          version: "SFZ v2"
 
     - name: "lfoN_volume"
       short_description: ""
@@ -4147,11 +4337,8 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_volume_onccX"
-          version: "SFZ v2"
         - name: "lfoN_volume_smoothccX"
-          version: "SFZ v2"
         - name: "lfoN_volume_stepccX"
-          version: "SFZ v2"
 
     - name: "lfoN_amplitude"
       short_description: ""
@@ -4159,11 +4346,8 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_amplitude_onccX"
-          version: "SFZ v2"
         - name: "lfoN_amplitude_smoothccX"
-          version: "SFZ v2"
         - name: "lfoN_amplitude_stepccX"
-          version: "SFZ v2"
 
     - name: "lfoN_pan"
       short_description: ""
@@ -4171,11 +4355,8 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_pan_onccX"
-          version: "SFZ v2"
         - name: "lfoN_pan_smoothccX"
-          version: "SFZ v2"
         - name: "lfoN_pan_stepccX"
-          version: "SFZ v2"
 
     - name: "lfoN_width"
       short_description: ""
@@ -4183,11 +4364,8 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_width_onccX"
-          version: "SFZ v2"
         - name: "lfoN_width_smoothccX"
-          version: "SFZ v2"
         - name: "lfoN_width_stepccX"
-          version: "SFZ v2"
 
     - name: "lfoN_freq_lfoX"
       short_description: ""
@@ -4210,17 +4388,14 @@ categories:
       version: "SFZ v2"
       modulation:
         midi_cc:
-        - name: "lfoN_picth_curveccN"
+        - name: "lfoN_pitch_curveccX"
           value:
             type_name: "integer"
             min: 0
             max: 255
         - name: "lfoN_pitch_onccX"
-          version: "SFZ v2"
         - name: "lfoN_pitch_smoothccX"
-          version: "SFZ v2"
         - name: "lfoN_pitch_stepccX"
-          version: "SFZ v2"
 
     - name: "lfoN_cutoff"
       short_description: ""
@@ -4228,25 +4403,16 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_cutoff_onccX"
-          version: "SFZ v2"
         - name: "lfoN_cutoff_smoothccX"
-          version: "SFZ v2"
         - name: "lfoN_cutoff_stepccX"
-          version: "SFZ v2"
-
-    - name: "lfoN_cutoff2"
-      short_description: ""
-      version: "SFZ v2"
-      modulation:
-        midi_cc:
-        - name: "lfoN_cutoff2_onccX"
-          version: "SFZ v2"
-
-        - name: "lfoN_cutoff2_smoothccX"
-          version: "SFZ v2"
-
-        - name: "lfoN_cutoff2_stepccX"
-          version: "SFZ v2"
+      alias:
+      - name: "lfoN_cutoff2"
+        version: "SFZ v2"
+        modulation:
+          midi_cc:
+          - name: "lfoN_cutoff2_onccX"
+          - name: "lfoN_cutoff2_smoothccX"
+          - name: "lfoN_cutoff2_stepccX"
 
     - name: "lfoN_resonance"
       short_description: ""
@@ -4254,27 +4420,16 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_resonance_onccX"
-          version: "SFZ v2"
-
         - name: "lfoN_resonance_smoothccX"
-          version: "SFZ v2"
-
         - name: "lfoN_resonance_stepccX"
-          version: "SFZ v2"
-
-    - name: "lfoN_resonance2"
-      short_description: ""
-      version: "SFZ v2"
-      modulation:
-        midi_cc:
-        - name: "lfoN_resonance2_onccX"
-          version: "SFZ v2"
-
-        - name: "lfoN_resonance2_smoothccX"
-          version: "SFZ v2"
-
-        - name: "lfoN_resonance2_stepccX"
-          version: "SFZ v2"
+      alias:
+      - name: "lfoN_resonance2"
+        version: "SFZ v2"
+        modulation:
+          midi_cc:
+          - name: "lfoN_resonance2_onccX"
+          - name: "lfoN_resonance2_smoothccX"
+          - name: "lfoN_resonance2_stepccX"
 
     - name: "lfoN_eqXfreq"
       short_description: ""
@@ -4282,13 +4437,8 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_eqXfreq_onccY"
-          version: "SFZ v2"
-
         - name: "lfoN_eqXfreq_smoothccY"
-          version: "SFZ v2"
-
         - name: "lfoN_eqXfreq_stepccY"
-          version: "SFZ v2"
 
     - name: "lfoN_eqXbw"
       short_description: ""
@@ -4296,13 +4446,8 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_eqXbw_onccY"
-          version: "SFZ v2"
-
         - name: "lfoN_eqXbw_smoothccY"
-          version: "SFZ v2"
-
         - name: "lfoN_eqXbw_stepccY"
-          version: "SFZ v2"
 
     - name: "lfoN_eqXgain"
       short_description: ""
@@ -4310,169 +4455,97 @@ categories:
       modulation:
         midi_cc:
         - name: "lfoN_eqXgain_onccY"
-          version: "SFZ v2"
-
         - name: "lfoN_eqXgain_smoothccY"
-          version: "SFZ v2"
-
         - name: "lfoN_eqXgain_stepccY"
-          version: "SFZ v2"
 
     - name: "lfoN_decim"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "lfoN_decim_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_decim_smoothccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_decim_stepccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "lfoN_bitred"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "lfoN_bitred_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_bitred_smoothccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_bitred_stepccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "lfoN_noiselevel"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "lfoN_noiselevel_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_noiselevel_smoothccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_noiselevel_stepccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "lfoN_noisestep"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "lfoN_noisestep_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_noisestep_smoothccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_noisestep_stepccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "lfoN_noisetone"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "lfoN_noisetone_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_noisetone_smoothccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_noisetone_stepccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "lfoN_drive"
       short_description: ""
-      version: "Cakewalk SFZ v2"
+      version: "Cakewalk"
       modulation:
         midi_cc:
         - name: "lfoN_drive_onccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_drive_smoothccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
-
         - name: "lfoN_drive_stepccX"
-          short_description: ""
-          version: "Cakewalk SFZ v2"
 
     - name: "lfoN_offset"
       short_description:
         "DC offset - Add to LFO output; not affected by scale."
+      version: "ARIA"
       alias:
       - name: "lfoN_offsetX"
-      version: "ARIA"
       value:
         type_name: "float"
-      see_also:
-      - "lfoN_delay"
-      - "lfoN_fade"
-      - "lfoN_freq"
-      - "lfoN_ratio"
-      - "lfoN_scale"
-      - "lfoN_wave"
 
     - name: "lfoN_ratio"
       short_description:
         "Sets the ratio between the specified sub waveform and the main waveform."
+      version: "ARIA"
       alias:
       - name: "lfoN_ratioX"
-      version: "ARIA"
       value:
         type_name: "float"
-      see_also:
-      - "lfoN_delay"
-      - "lfoN_fade"
-      - "lfoN_freq"
-      - "lfoN_offset"
-      - "lfoN_scale"
-      - "lfoN_wave"
 
     - name: "lfoN_scale"
       short_description:
         "Sets the scaling between the specified sub waveform and the main waveform."
+      version: "ARIA"
       alias:
       - name: "lfoN_scaleX"
-      version: "ARIA"
       value:
         type_name: "float"
-      see_also:
-      - "lfoN_delay"
-      - "lfoN_fade"
-      - "lfoN_freq"
-      - "lfoN_offset"
-      - "lfoN_ratio"
-      - "lfoN_wave"
 
 - name: "Curves"
+  id: "crv"
+  url: "/headers/curve"
   opcodes:
   - name: "curve_index"
     short_description: "Curve ID definition."
-    version: "SFZ v2"
+    version: "ARIA"
     value:
       type_name: "integer"
       min: 0
@@ -4491,14 +4564,93 @@ categories:
       max: 1
 
 - name: "Effects"
+  id: "efx"
+  url: "/headers/effect"
   opcodes:
+  - name: "apan_depth"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "apan_depth_onccN"
+
+  - name: "apan_dry"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "apan_dry_onccN"
+
+  - name: "apan_freq"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "Hz"
+    modulation:
+      midi_cc:
+      - name: "apan_freq_onccN"
+
+  - name: "apan_phase"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      min: 0
+      max: 180
+      unit: "°"
+    modulation:
+      midi_cc:
+      - name: "apan_phase_onccN"
+
+  - name: "apan_waveform"
+    short_description: "LFO wave number."
+    version: "Cakewalk"
+
+  - name: "apan_wet"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "apan_wet_onccN"
+
+  - name: "bitred"
+    version: "Cakewalk"
+    short_description: "Bit reduction."
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      envelope: "✓"
+      lfo: "✓"
+      midi_cc:
+      - name: "bitred_onccN"
+      - name: "bitred_curveccN"
+      - name: "bitred_smoothccN"
+      - name: "bitred_stepccN"
+
   - name: "bus"
     version: "SFZ v2"
     short_description:
       "The target bus for the effect."
     value:
       type_name: "string"
+      default: "main"
       options:
+      - name: "main"
       - name: "aux1"
       - name: "aux2"
       - name: "aux3"
@@ -4514,12 +4666,394 @@ categories:
       - name: "midi"
         version: "ARIA"
 
+  - name: "bypass_onccN"
+    short_description:
+      "Sets up a bypass controller for the effect."
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+
+  - name: "comp_attack"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "seconds"
+
+  - name: "comp_gain"
+    short_description: ""
+    version: "Cakewalk"
+   #value:
+     #type_name: "float"
+     #unit: "dB"
+
+  - name: "comp_ratio"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+
+  - name: "comp_release"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "seconds"
+
+  - name: "comp_stlink"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "string"
+      options:
+      - name: "on"
+      - name: "off"
+
+  - name: "comp_threshold"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "dB"
+
+  - name: "decim"
+    version: "Cakewalk"
+    short_description: "Decimator."
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      envelope: "✓"
+      lfo: "✓"
+      midi_cc:
+      - name: "decim_onccN"
+      - name: "decim_curveccN"
+      - name: "decim_smoothccN"
+      - name: "decim_stepccN"
+
+  - name: "delay_cutoff"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "Hz"
+    modulation:
+      midi_cc:
+      - name: "delay_cutoff_onccN"
+
+  - name: "delay_damphi"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_damphi_onccN"
+
+  - name: "delay_damplo"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_damplo_onccN"
+
+  - name: "delay_dry"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_dry_onccN"
+
+  - name: "delay_feedback"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_feedback_onccN"
+
+  - name: "delay_filter"
+    short_description: "Name of filter type."
+    version: "Cakewalk"
+    value:
+      type_name: "string"
+
+  - name: "delay_input"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_input_onccN"
+
+  - name: "delay_levelc"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+
+  - name: "delay_levell"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+
+  - name: "delay_levelr"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+
+  - name: "delay_lfofreq"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "Hz"
+    modulation:
+      midi_cc:
+      - name: "delay_lfofreq_onccN"
+
+  - name: "delay_moddepth"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_moddepth_onccN"
+
+  - name: "delay_mode"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "string"
+      options:
+      - name: "detune"
+      - name: "chorus"
+      - name: "cross"
+      - name: "flanger"
+      - name: "lrc"
+      - name: "mod"
+      - name: "multimod"
+      - name: "panning"
+      - name: "ping"
+      - name: "rlc"
+      - name: "stereo"
+      - name: "tlcr"
+
+  - name: "delay_panc"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_panc_onccN"
+
+  - name: "delay_panl"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_panl_onccN"
+
+  - name: "delay_panr"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_panr_onccN"
+
+  - name: "delay_resonance"
+    short_description: ""
+    version: "Cakewalk"
+   #value:
+     #type_name: "float"
+     #unit: "dB"
+    modulation:
+      midi_cc:
+      - name: "delay_resonance_onccN"
+
+  - name: "delay_spread"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_spread_onccN"
+
+  - name: "delay_syncc_onccN"
+    short_description: ""
+    version: "Cakewalk"
+
+  - name: "delay_syncl_onccN"
+    short_description: ""
+    version: "Cakewalk"
+
+  - name: "delay_syncr_onccN"
+    short_description: ""
+    version: "Cakewalk"
+
+  - name: "delay_time_tap"
+    short_description: ""
+    version: "Cakewalk"
+
+  - name: "delay_timec"
+    short_description: ""
+    version: "Cakewalk"
+   #value:
+     #type_name: "float"
+     #unit: "seconds"
+    modulation:
+      midi_cc:
+      - name: "delay_timec_onccN"
+
+  - name: "delay_timel"
+    short_description: ""
+    version: "Cakewalk"
+   #value:
+     #type_name: "float"
+     #unit: "seconds"
+    modulation:
+      midi_cc:
+      - name: "delay_timel_onccN"
+
+  - name: "delay_timer"
+    short_description: ""
+    version: "Cakewalk"
+   #value:
+     #type_name: "float"
+     #unit: "seconds"
+    modulation:
+      midi_cc:
+      - name: "delay_timer_onccN"
+
+  - name: "delay_wet"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "delay_wet_onccN"
+
+  - name: "directtomain"
+    short_description:
+      "Gain of the main bus into the output."
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "%"
+      default: 100
+      min: 0
+      max: 100
+
+  - name: "disto_depth"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "disto_depth_onccN"
+
+  - name: "disto_dry"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "disto_dry_onccN"
+
+  - name: "disto_stages"
+    short_description: ""
+    version: "Cakewalk"
+
+  - name: "disto_tone"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "disto_tone_onccN"
+
+  - name: "disto_wet"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "disto_wet_onccN"
+
+  - name: "dsp_order"
+    short_description:
+      "Signal flow type in Rapture's DSP block."
+    version: "Cakewalk"
+    value:
+      type_name: "integer"
+      min: 0
+      max: 14
+
   - name: "effect1"
     short_description:
       "Level of effect1 send, in percentage (reverb in Cakewalk sfz)."
     version: "SFZ v1"
     value:
-      type_name: "integer"
+      type_name: "float"
       default: 0
       min: 0
       max: 100
@@ -4530,44 +5064,150 @@ categories:
       "Level of effect2 send, in percentage (chorus in Cakewalk sfz)."
     version: "SFZ v1"
     value:
-      type_name: "integer"
+      type_name: "float"
       default: 0
       min: 0
       max: 100
       unit: "%"
 
-  - name: "type"
+  - name: "effect3"
     short_description:
-      "A vendor-specific effect name. Varies across SFZ players"
+      "Gain of the region's send into the 3rd effect bus."
     version: "SFZ v2"
+    value:
+      type_name: "float"
+      default: 0
+      min: 0
+      max: 100
+      unit: "%"
+
+  - name: "effect4"
+    short_description:
+      "Gain of the region's send into the 4th effect bus."
+    version: "SFZ v2"
+    value:
+      type_name: "float"
+      default: 0
+      min: 0
+      max: 100
+      unit: "%"
+
+  - name: "eq_bw"
+    short_description: ""
+    version: "Cakewalk"
+    modulation:
+      midi_cc:
+      - name: "eq_bw_onccN"
+
+  - name: "eq_freq"
+    short_description: ""
+    version: "Cakewalk"
+    modulation:
+      midi_cc:
+      - name: "eq_freq_onccN"
+
+  - name: "eq_gain"
+    short_description: ""
+    version: "Cakewalk"
+    modulation:
+      midi_cc:
+      - name: "eq_gain_onccN"
+
+  - name: "eq_type"
+    short_description: ""
+    version: "Cakewalk"
+
+  - name: "filter_cutoff"
+    short_description: ""
+    version: "Cakewalk"
+   #value:
+     #type_name: "float"
+     #unit: "Hz"
+    modulation:
+      midi_cc:
+      - name: "filter_cutoff_onccN"
+
+  - name: "filter_resonance"
+    short_description: ""
+    version: "Cakewalk"
+   #value:
+     #type_name: "float"
+     #unit: "dB"
+    modulation:
+      midi_cc:
+      - name: "filter_resonance_onccN"
+
+  - name: "filter_type"
+    short_description: "Name of filter type."
+    version: "Cakewalk"
+    value:
+      type_name: "string"
+
+  - name: "fxNtomain"
+    short_description:
+      "Gain of the Nth effect bus into the output."
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "%"
+      default: 0
+      min: 0
+      max: 100
+
+  - name: "fxNtomix"
+    short_description:
+      "Gain of the Nth effect bus into the Mix node."
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "%"
+      default: 0
+      min: 0
+      max: 100
+
+  - name: "gate_onccN"
+    short_description: "Gate manual control."
+    version: "Cakewalk"
+
+  - name: "gate_attack"
+    short_description: ""
+    version: "Cakewalk"
+   #value:
+     #type_name: "float"
+     #unit: "seconds"
+
+  - name: "gate_release"
+    short_description: ""
+    version: "Cakewalk"
+   #value:
+     #type_name: "float"
+     #unit: "seconds"
+
+  - name: "gate_stlink"
+    short_description: ""
+    version: "Cakewalk"
     value:
       type_name: "string"
       options:
-      - name: "am"
-      - name: "autopan"
-      - name: "bitred"
-      - name: "buffer"
-      - name: "comp"
-      - name: "decim"
-      - name: "delay"
-      - name: "distorsion"
-      - name: "eq"
-      - name: "filter"
-      - name: "fm"
-      - name: "fverb"
-      - name: "gain"
-      - name: "gate"
-      - name: "limiter"
-      - name: "mixer"
-      - name: "octaver"
-      - name: "phaser"
-      - name: "rectify"
-      - name: "resonator"
-      - name: "ringmod"
-      - name: "static"
-      - name: "strings"
-      - name: "tdfir"
-      - name: "width"
+      - name: "on"
+      - name: "off"
+
+  - name: "gate_threshold"
+    short_description: ""
+    version: "Cakewalk"
+   #value:
+     #type_name: "float"
+     #unit: "dB"
+
+  - name: "internal"
+    short_description: "Cakewalk internal features switch."
+    version: "Cakewalk"
+    value:
+      type_name: "string"
+      options:
+      - name: "on"
+      - name: "off"
+      default: "off"
 
   - name: "param_offset"
     short_description:
@@ -4576,6 +5216,318 @@ categories:
     version: "ARIA"
     value:
       type_name: "integer"
+
+  - name: "phaser_depth"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "phaser_depth_onccN"
+
+  - name: "phaser_feedback"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "phaser_feedback_onccN"
+
+  - name: "phaser_freq"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "Hz"
+    modulation:
+      midi_cc:
+      - name: "phaser_freq_onccN"
+
+  - name: "phaser_phase_onccN"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+
+  - name: "phaser_stages"
+    short_description: ""
+    version: "Cakewalk"
+
+  - name: "phaser_waveform"
+    short_description: "LFO wave number."
+    version: "Cakewalk"
+
+  - name: "phaser_wet"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "phaser_wet_onccN"
+
+  - name: "reverb_damp"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "reverb_damp_onccN"
+
+  - name: "reverb_dry"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "reverb_dry_onccN"
+
+  - name: "reverb_input"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "reverb_input_onccN"
+
+  - name: "reverb_predelay"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "seconds"
+    modulation:
+      midi_cc:
+      - name: "reverb_predelay_onccN"
+
+  - name: "reverb_size"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "reverb_size_onccN"
+
+  - name: "reverb_tone"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "reverb_tone_onccN"
+
+  - name: "reverb_type"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "string"
+      options:
+      - name: "chamber"
+      - name: "large_hall"
+      - name: "large_room"
+      - name: "mid_hall"
+      - name: "mid_room"
+      - name: "small_hall"
+      - name: "small_room"
+
+  - name: "reverb_wet"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "reverb_wet_onccN"
+
+  - name: "static_cyclic_level"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+
+  - name: "static_cyclic_time"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "seconds"
+
+  - name: "static_filter"
+    short_description: "Name of filter type."
+    version: "Cakewalk"
+    value:
+      type_name: "string"
+
+  - name: "static_level"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "static_level_onccN"
+
+  - name: "static_random_level"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+
+  - name: "static_random_maxtime"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "seconds"
+
+  - name: "static_random_mintime"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "seconds"
+
+  - name: "static_stereo"
+    short_description: ""
+    version: "Cakewalk"
+
+  - name: "static_tone"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+
+  - name: "strings_number"
+    short_description: "Number of synthesized resonant strings."
+    version: "Cakewalk"
+
+  - name: "strings_wet_onccN"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+
+  - name: "tdfir_dry"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "tdfir_dry_onccN"
+
+  - name: "tdfir_gain"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+
+  - name: "tdfir_impulse"
+    short_description: ""
+    version: "Cakewalk"
+
+  - name: "tdfir_wet"
+    short_description: ""
+    version: "Cakewalk"
+    value:
+      type_name: ""
+      min: 0
+      max: 100
+    modulation:
+      midi_cc:
+      - name: "tdfir_wet_onccN"
+
+  - name: "type"
+    short_description:
+      "Effect type or vendor-specific effect name. Varies across SFZ players."
+    version: "SFZ v2"
+    value:
+      type_name: "string"
+      options:
+      - name: "apan"
+      - name: "comp"
+      - name: "delay"
+      - name: "disto"
+      - name: "eq"
+      - name: "filter"
+      - name: "fverb"
+      - name: "gate"
+      - name: "limiter"
+      - name: "lofi"
+      - name: "mverb"
+      - name: "phaser"
+      - name: "static"
+      - name: "strings"
+      - name: "tdfir"
+      - name: "com.mda.Limiter"
+        version: "ARIA"
+      - name: "com.mda.Overdrive"
+        version: "ARIA"
+      - name: "com.mda.Leslie"
+        version: "ARIA"
+      - name: "com.mda.RingMod"
+        version: "ARIA"
+      - name: "com.mda.Delay"
+        version: "ARIA"
+      - name: "com.mda.Bandisto"
+        version: "ARIA"
+      - name: "com.mda.Ambience"
+        version: "ARIA"
+      - name: "com.mda.DubDelay"
+        version: "ARIA"
+      - name: "com.mda.Detune"
+        version: "ARIA"
+      - name: "com.mda.Dither"
+        version: "ARIA"
+      - name: "com.mda.Combo"
+        version: "ARIA"
+      - name: "com.mda.Degrade"
+        version: "ARIA"
+      - name: "com.mda.SubSynth"
+        version: "ARIA"
+      - name: "com.mda.RezFilter"
+        version: "ARIA"
 
   - name: "vendor_specific"
     short_description:
@@ -4586,10 +5538,12 @@ categories:
       type_name: "string"
 
 - name: "Loading"
+  id: "ldg"
+  url: "/opcodes/?v=cakewalk&c=ldg"
   opcodes:
   - name: "load_mode"
     short_description: ""
-    version: "Cakewalk SFZ v2"
+    version: "Cakewalk"
     value:
       type_name: "integer"
       min: 0
@@ -4597,53 +5551,88 @@ categories:
 
   - name: "load_start"
     short_description: ""
-    version: "Cakewalk SFZ v2"
+    version: "Cakewalk"
     value:
       type_name: "integer"
 
   - name: "load_end"
     short_description: ""
-    version: "Cakewalk SFZ v2"
+    version: "Cakewalk"
     value:
       type_name: "integer"
 
   - name: "sample_quality"
-    short_description: ""
-    version: "Cakewalk SFZ v2"
+    short_description: "Sample playback quality settings."
+    version: "Cakewalk"
     value:
       type_name: "integer"
       min: 1
       max: 10
 
   - name: "image"
-    short_description: ""
-    version: "Cakewalk SFZ v2"
+    short_description: "Sets the background image of the instrument."
+    version: "Cakewalk"
     value:
       type_name: "string"
 
 - name: "Wavetable Oscillator"
+  id: "wos"
+  url: "opcodes/?v=cakewalk&c=wos"
   opcodes:
   - name: "oscillator"
     short_description: ""
-    version: "Cakewalk SFZ v2"
+    version: "Cakewalk"
     value:
       type_name: "string"
       options:
       - name: "on"
       - name: "off"
 
-  - name: "oscillator_phase"
+  - name: "oscillator_detune"
     short_description: ""
-    version: "Cakewalk SFZ v2"
+    version: "Cakewalk"
+    modulation:
+      midi_cc:
+      - name: "oscillator_detune_onccN"
+
+  - name: "oscillator_mode"
+    short_description: "The modulation type."
+    version: "Cakewalk"
     value:
       type_name: "integer"
-      unit: "degree"
       min: 0
+      max: 2
+      default: 0
+
+  - name: "oscillator_mod_depth"
+    short_description: ""
+    version: "Cakewalk"
+    modulation:
+      midi_cc:
+      - name: "oscillator_mod_depth_onccN"
+      - name: "oscillator_mod_smoothccN"
+
+  - name: "oscillator_multi"
+    short_description: "Configure a region to use more than one oscillator."
+    version: "Cakewalk"
+    value:
+      type_name: "integer"
+      min: 1
+      max: 9
+      default: 1
+
+  - name: "oscillator_phase"
+    short_description: "Oscillator phase. Negative values for random phase."
+    version: "Cakewalk"
+    value:
+      type_name: "float"
+      unit: "°"
+      min: -1
       max: 360
 
   - name: "oscillator_quality"
     short_description: ""
-    version: "Cakewalk SFZ v2"
+    version: "Cakewalk"
     value:
       type_name: "integer"
       min: 0
@@ -4651,42 +5640,4 @@ categories:
 
   - name: "oscillator_table_size"
     short_description: ""
-    version: "Cakewalk SFZ v2"
-
-  - name: "oscillator_multi"
-    short_description: ""
-    version: "Cakewalk SFZ v2"
-    value:
-      type_name: "integer"
-      min: 1
-      max: 9
-
-  - name: "oscillator_mode"
-    short_description: ""
-    version: "Cakewalk SFZ v2"
-    value:
-      type_name: "integer"
-      min: 0
-      max: 2
-
-  - name: "oscillator_detune"
-    short_description: ""
-    version: "Cakewalk SFZ v2"
-    modulation:
-      midi_cc:
-      - name: "oscillator_detune_onccN"
-        short_description: ""
-        version: "Cakewalk SFZ v2"
-
-  - name: "oscillator_mod_depth"
-    short_description: ""
-    version: "Cakewalk SFZ v2"
-    modulation:
-      midi_cc:
-      - name: "oscillator_mod_depth_onccN"
-        short_description: ""
-        version: "Cakewalk SFZ v2"
-
-      - name: "oscillator_mod_smoothccN"
-        short_description: ""
-        version: "Cakewalk SFZ v2"
+    version: "Cakewalk"

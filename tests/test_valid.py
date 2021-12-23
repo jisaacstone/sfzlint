@@ -28,10 +28,17 @@ class TestValid(TestCase):
         sfz = self._parse(
             '''
             #define $cool_key 42
-            <global> lovel=0 hivel=$cool_key
+            <global> lovel=1 hivel=$cool_key
             ''')
         self.assertEqual(sfz.defines.get('cool_key'), 42)
         self.assertEqual(sfz.headers[0].get('hivel'), 42)
+
+    def test_cakewalk_implemented(self):
+        self._parse(
+            '''
+            <region>
+            noise_stereo=on
+            ''')
 
     def test_comments(self):
         sfz = self._parse(

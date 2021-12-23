@@ -20,6 +20,10 @@ ver_mapping = {
 }
 
 
+def ver_code(version):
+    return ver_mapping.get(version, version.lower())
+
+
 type_mapping = {
     'integer': int,
     'float': Real,
@@ -79,12 +83,8 @@ class CurveCCValidator(validators.Validator):
 overrides = {
     ('tune', 'value', 'validator'): TuneValidator(),
     ('sample', 'value', 'validator'): SampleValidator(),
-    ('varNN_target', 'value',  'type'): object,
-    ('*_mod', 'target'): {'validator': validators.Choice(
-        ('delay', 'delay_beats', 'stop_beats', 'offset', 'pitch',
-         'tune', 'volume', 'amplitude', 'cutoff', 'resonance',
-         'fil_gain', 'cutoff2', 'resonance2', 'fil2_gain', 'pan',
-         'position', 'width', 'bitred', 'decim'))},
+    ('varNN_*', 'value',  'type'): object,
+    ('*_mod', 'value', 'tyep'): object,
     # if a label is parsed as an int by the lexer that is OK
     ('label_ccN', 'value', 'type'): object,
     ('global_label', 'value', 'type'): object,
@@ -99,11 +99,13 @@ def _override(ops):
     for keys, override in overrides.items():
         opp = ops
         for key in keys[:-1]:
+            if key not in opp:
+                break
             opp = opp[key]
         opp[keys[-1]] = override
 
     # the choices in the yml are 'target' choices not value choices
-    ops['varNN_target']['target'] = ops['varNN_target'].pop('value')
+    # ops['varNN_*']['target'] = ops['varNN_*'].pop('value')
     return ops
 
 
@@ -140,7 +142,9 @@ def _iter_ops(opcodes):
 def op_to_validator(op_data, **kwargs):
     valid_meta = dict(
         name=op_data['name'],
-        ver=ver_mapping[op_data.get('version')],
+        ver=ver_code(
+            op_data.get('version', 'unknown')
+        ),
         **kwargs)
     _extract_vdr_meta(op_data, valid_meta)
     yield valid_meta
@@ -154,12 +158,18 @@ def op_to_validator(op_data, **kwargs):
         else:
             alias_meta['ver'] = valid_meta['ver']
         yield alias_meta
+        if 'modulation' in alias:
+            yield from extract_modulation(alias['modulation'].items(), alias['name'])
     if 'modulation' in op_data:
-        for mod_type, modulations in op_data['modulation'].items():
-            if isinstance(modulations, list):  # some are just checkmarks
-                for mod in modulations:
-                    yield from op_to_validator(
-                        mod, modulates=op_data['name'], mod_type=mod_type)
+        yield from extract_modulation(op_data['modulation'].items(), op_data['name'])
+
+
+def extract_modulation(items, op_name):
+    for mod_type, modulations in items:
+        if isinstance(modulations, list):  # some are just checkmarks
+            for mod in modulations:
+                yield from op_to_validator(
+                    mod, modulates=op_name, mod_type=mod_type)
 
 
 def _extract_vdr_meta(op_data, valid_meta):

@@ -61,16 +61,6 @@ class TestInvalid(TestCase):
         (_sev, _msg, token, _), = errs
         self.assertEqual(token, -400)
 
-    def test_cakewalk_unimplemented(self):
-        _, errs = self._parse(
-            '''
-            <region>
-            noise_stereo=on
-            ''')
-        (sev, _msg, token, _), = errs
-        self.assertEqual(token, 'noise_stereo')
-        self.assertEqual(sev, 'WARN')
-
     def test_unknown_cc_format(self):
         _, errs = self._parse(
             '''
