@@ -24,6 +24,7 @@ setup(
         ]
     },
     install_requires=[
+        'appdirs',
         'lark-parser>=0.7.8',
         'pyyaml>=6.0.0'
     ],
