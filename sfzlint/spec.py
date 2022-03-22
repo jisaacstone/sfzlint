@@ -7,7 +7,7 @@ from pathlib import Path
 from numbers import Real  # int or float
 import appdirs
 import yaml
-from . import validators
+from . import validators, settings
 
 
 ver_mapping = {
@@ -30,6 +30,7 @@ type_mapping = {
     'float': Real,
     'string': str,
 }
+
 
 # there will be repetitive calls to listdir
 @lru_cache(maxsize=32)
@@ -81,6 +82,12 @@ class CurveCCValidator(validators.Validator):
             return 'no corresponding curve_index found'
 
 
+class KeyValidator(validators.Range):
+    def validate(self, value, config, *args):
+        if value == -1 and config.spec_versions == ['v1']:
+            return '-1 is only valid from V2 onward'
+
+
 overrides = {
     ('tune', 'value', 'validator'): TuneValidator(),
     ('sample', 'value', 'validator'): SampleValidator(),
@@ -93,6 +100,9 @@ overrides = {
     ('group_label', 'value', 'type'): object,
     ('region_label', 'value', 'type'): object,
     ('sw_label', 'value', 'type'): object,
+    # -1 prevents region being triggered by any key
+    ('hikey', 'value', 'validator'): KeyValidator(-1, 127),
+    ('lokey', 'value', 'validator'): KeyValidator(-1, 127),
 }
 
 
@@ -160,9 +170,13 @@ def op_to_validator(op_data, **kwargs):
             alias_meta['ver'] = valid_meta['ver']
         yield alias_meta
         if 'modulation' in alias:
-            yield from extract_modulation(alias['modulation'].items(), alias['name'])
+            yield from extract_modulation(
+                alias['modulation'].items(),
+                alias['name'])
     if 'modulation' in op_data:
-        yield from extract_modulation(op_data['modulation'].items(), op_data['name'])
+        yield from extract_modulation(
+            op_data['modulation'].items(),
+            op_data['name'])
 
 
 def extract_modulation(items, op_name):
@@ -179,9 +193,9 @@ def _extract_vdr_meta(op_data, valid_meta):
             if v_key not in valid_meta:
                 valid_meta[v_key] = {}
             valid_meta[v_key]['validator'] = _validator(op_data[v_key])
-            if 'type' in op_data[v_key]:
-                valid_meta[v_key]['type'] = type_mapping[
-                    op_data[v_key]['type_name']]
+            type_name = op_data[v_key].get('type_name')
+            if type_name:
+                valid_meta[v_key]['type'] = type_mapping[type_name]
 
 
 def _validator(data_value):
@@ -199,6 +213,9 @@ def _validator(data_value):
 
 
 def _pickled(name, fn):
+    # pickling as cache cuts script time by ~400ms on my system
+    if not settings.pickle:
+        return fn()
     user_cache_dir = Path(appdirs.user_cache_dir("sfzlint", "jisaacstone"))
     p_file = user_cache_dir / f'{name}.pickle'
     if not p_file.exists():
@@ -212,6 +229,17 @@ def _pickled(name, fn):
     return data
 
 
-# pickling as cache cuts script time by ~400ms on my system
-opcodes = _pickled('opcodes', lambda: _override(_extract()))
-cc_opcodes = {k for k in opcodes if 'cc' in k and 'curvecc' not in k}
+_cache = {}
+
+
+def opcodes():
+    if 'opcodes' not in _cache:
+        _cache['opcodes'] = _pickled('opcodes', lambda: _override(_extract()))
+    return _cache['opcodes']
+
+
+def cc_opcodes():
+    if 'cc_opcodes' not in _cache:
+        _cache['cc_opcodes'] = {
+            k for k in opcodes() if 'cc' in k and 'curvecc' not in k}
+    return _cache['cc_opcodes']

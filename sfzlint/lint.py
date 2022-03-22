@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 from lark.exceptions import UnexpectedCharacters, UnexpectedToken
 from .parser import validate, SFZ, SFZValidatorConfig
-from . import spec
+from . import spec, settings
 
 
 formats = {
@@ -101,7 +101,12 @@ def main():
     parser.add_argument(
         '--rel-path',
         help='validate includes and sample paths relative to this path')
+    parser.add_argument(
+        '--no-pickle',
+        action='store_true',
+        help='do not use the pickle cache (for testing)')
     args = parser.parse_args()
+    settings.pickle = not args.no_pickle
     lint(args)
 
 

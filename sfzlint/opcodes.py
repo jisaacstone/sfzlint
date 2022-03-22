@@ -98,7 +98,7 @@ def _try_cc_subs(opcode):
             for alt in cc_alts:
                 if alt != variation:
                     alternative = opcode.replace(variation, alt)
-                    if alternative in spec.cc_opcodes:
+                    if alternative in spec.cc_opcodes():
                         return alternative
     return None
 
@@ -106,9 +106,9 @@ def _try_cc_subs(opcode):
 def validate_curvecc(raw_opcode, token, config):
     '''Specializing for now, until we get this into the .yml'''
     opcode, subs = OpcodeIntRepl.sub(raw_opcode)
-    known_op = opcode in spec.opcodes
+    known_op = opcode in spec.opcodes()
     if known_op:
-        validation = spec.opcodes[opcode]
+        validation = spec.opcodes()[opcode]
         spec_ver = config.spec_versions
         if spec_ver and validation['ver'] not in spec_ver:
             raise ValidationError(
@@ -126,13 +126,13 @@ def validate_curvecc(raw_opcode, token, config):
 
 
 def validate_opcode_expr(raw_opcode, token, config):
-    if raw_opcode not in spec.opcodes:
+    if raw_opcode not in spec.opcodes():
         opcode, subs = OpcodeIntRepl.sub(raw_opcode)
     else:
         opcode = raw_opcode.value
         subs = {}
 
-    if opcode not in spec.opcodes:
+    if opcode not in spec.opcodes():
         if 'cc' in opcode and 'curvecc' not in opcode:
             new_opcode = _try_cc_subs(opcode)
             if new_opcode:
@@ -143,7 +143,7 @@ def validate_opcode_expr(raw_opcode, token, config):
                     f'undocumented alias of {new_opcode} ({opcode})',
                     raw_opcode)
     try:
-        op_meta = spec.opcodes[opcode]
+        op_meta = spec.opcodes()[opcode]
     except KeyError:
         raise ValidationWarning(
             f'unknown opcode ({opcode})',

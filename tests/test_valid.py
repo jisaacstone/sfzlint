@@ -6,6 +6,7 @@ from inspect import cleandoc
 
 
 class TestValid(TestCase):
+
     def assertEqual(self, aa, bb, *args, **kwargs):
         # handle tokens transparently
         if hasattr(aa, 'value'):
@@ -145,6 +146,19 @@ class TestValid(TestCase):
             <group>amplitude_oncc140=75
             ''')
         self.assertEqual(sfz.headers[0]['amplitude_oncc140'], 75)
+
+    def test_neg_hikey(self):
+        # In the SFZ 1 specification, the allowed range is 0 to 127.
+        # However, SFZ 2 additionally includes the possibility to set
+        # lokey and hikey to -1, to prevent a region from being triggered
+        sfz = self._parse(
+            '''
+            <region>
+            hikey=-1
+            lokey=-1
+            ''')
+        self.assertEqual(sfz.headers[0]['hikey'], -1)
+        self.assertEqual(sfz.headers[0]['lokey'], -1)
 
     def test_hint(self):
         sfz = self._parse(

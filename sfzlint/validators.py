@@ -60,7 +60,7 @@ class Alias(Validator):
         self.name = name
 
     def validate(self, value, *args):
-        opc = spec.opcodes[self.name].get('value')
+        opc = spec.opcodes()[self.name].get('value')
         if opc and 'validator' in opc:
             return opc['validator'].validate(value, *args)
 

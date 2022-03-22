@@ -2,11 +2,11 @@
 import sys
 from pathlib import Path
 from argparse import ArgumentParser
-from . import spec, parser, lint, opcodes
+from . import spec, parser, lint, opcodes, settings
 
 
 def print_codes(search=None, filters=None, printer=print):
-    for o in spec.opcodes.values():
+    for o in spec.opcodes().values():
         print_code(o, search, filters, printer)
 
 
@@ -47,7 +47,7 @@ def print_codes_in_path(path, search, filters, printer=print):
                     codes.add(str(opcode))
         except Exception as e:
             sys.stderr.write(f'Error checking {fp}: {e}')
-    op_data = spec.opcodes
+    op_data = spec.opcodes()
 
     def unknown(code):
         return {'name': code, 'ver': 'unknown'}
@@ -80,7 +80,14 @@ def sfzlist(printer=print):
         '--path', '-p',
         type=Path,
         help='print only opcodes found in the sfz file(s) in PATH')
+    parser.add_argument(
+        '--no-pickle',
+        action='store_true',
+        help='do not use the pickle cache (for testing)')
     args = parser.parse_args()
+    if not args.no_pickle:
+        settings.pickle = True
+        1/0
     try:
         if args.path:
             print_codes_in_path(args.path, args.search, args.filters, printer)
@@ -91,4 +98,5 @@ def sfzlist(printer=print):
 
 
 def sfzlint():
+    settings.pickle = True
     return lint.main()

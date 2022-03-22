@@ -11,7 +11,7 @@ for pfile in Path(__file__).parent.rglob('*.pickle'):
 
 setup(
     name='sfzlint',
-    version='0.1.2',
+    version='0.1.4',
     description='parser and linter for sfz files written in python',
     author='jisaacstone',
     packages=['sfzlint'],

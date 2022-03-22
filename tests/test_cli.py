@@ -6,6 +6,7 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 from collections import namedtuple
 from sfzlint.cli import sfzlint, sfzlist
+from sfzlint import settings
 
 
 fixture_dir = Path(__file__).parent / 'fixtures'
@@ -20,21 +21,32 @@ class ErrMsg(namedtuple('errmsg', (
         return super().__new__(cls, file, row, column, level, message)
 
 
+def patchargs(path, *args):
+    newargv = ['sfzlint', '--no-pickle', str(fixture_dir / path)] + list(args)
+
+    def wrapper(fn):
+        return patch('sys.argv', new=newargv)(fn)
+
+    return wrapper
+
+
 class TestSFZLint(TestCase):
+    def tearDown(self):
+        # Ensure this does not get accidentally set
+        self.assertFalse(settings.pickle)
+
     def assert_has_message(self, message, err_list):
         msglen = len(message)
         msgs = {e.message[:msglen] for e in err_list}
         self.assertIn(message, msgs, f'{message} not in {err_list}')
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'basic/valid.sfz')])
+    @patchargs('basic/valid.sfz')
     @patch('builtins.print')
     def test_valid_file(self, print_mock):
         sfzlint()
         self.assertFalse(print_mock.called, print_mock.call_args_list)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'basic/bad.sfz')])
+    @patchargs('basic/bad.sfz')
     @patch('builtins.print')
     def test_invalid_file(self, print_mock):
         sfzlint()
@@ -43,8 +55,7 @@ class TestSFZLint(TestCase):
                  for a in print_mock.call_args_list]
         self.assert_has_message('unknown opcode', calls)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'basic')])
+    @patchargs('basic')
     def test_lint_dir(self):
         with patch('builtins.print') as print_mock:
             sfzlint()
@@ -53,8 +64,7 @@ class TestSFZLint(TestCase):
                  for a in print_mock.call_args_list]
         self.assert_has_message('unknown opcode', calls)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'include/inbadfile.sfz')])
+    @patchargs('include/inbadfile.sfz')
     def test_include_parse_error(self):
         with patch('builtins.print') as print_mock:
             sfzlint()
@@ -63,16 +73,13 @@ class TestSFZLint(TestCase):
                  for a in print_mock.call_args_list]
         self.assert_has_message('error loading include', calls)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'include/hasinc.sfz')])
+    @patchargs('include/hasinc.sfz')
     @patch('builtins.print')
     def test_include_define(self, print_mock):
         sfzlint()
         self.assertFalse(print_mock.called, print_mock.call_args_list)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'basic/valid.sfz'),
-        '--spec-version', 'v1'])
+    @patchargs('basic/valid.sfz', '--spec-version', 'v1')
     @patch('builtins.print')
     def test_spec_version(self, print_mock):
         sfzlint()
@@ -82,8 +89,7 @@ class TestSFZLint(TestCase):
         self.assert_has_message('header spec v2 not in', calls)
         self.assert_has_message('opcode spec v2 is not', calls)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'basic/nosample.sfz')])
+    @patchargs('basic/nosample.sfz')
     @patch('builtins.print')
     def test_missing_sample(self, print_mock):
         sfzlint()
@@ -92,22 +98,19 @@ class TestSFZLint(TestCase):
                  for a in print_mock.call_args_list]
         self.assert_has_message('file not found', calls)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'basic/relsample.sfz')])
+    @patchargs('basic/relsample.sfz')
     def test_relative_path(self):
         with patch('builtins.print') as print_mock:
             sfzlint()
         self.assertFalse(print_mock.called, print_mock.call_args_list)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'basic/def_path.sfz')])
+    @patchargs('basic/def_path.sfz')
     def test_default_path(self):
         with patch('builtins.print') as print_mock:
             sfzlint()
         self.assertFalse(print_mock.called, print_mock.call_args_list)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'basic/badcase.sfz')])
+    @patchargs('basic/badcase.sfz')
     def test_bad_case(self):
         with patch('builtins.print') as print_mock:
             sfzlint()
@@ -119,16 +122,14 @@ class TestSFZLint(TestCase):
         else:
             self.assert_has_message('file not found', calls)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'include/sub/relpath.sfz'),
-        '--rel-path', str(fixture_dir / 'include')])
+    @patchargs('include/sub/relpath.sfz',
+               '--rel-path', str(fixture_dir / 'include'))
     def test_rel_path(self):
         with patch('builtins.print') as print_mock:
             sfzlint()
         self.assertFalse(print_mock.called, print_mock.call_args_list)
 
-    @patch('sys.argv', new=[
-        'sfzlint', str(fixture_dir / 'aria_program.xml')])
+    @patchargs('aria_program.xml')
     def test_xml_with_defines(self):
         with patch('builtins.print') as print_mock:
             sfzlint()
@@ -140,7 +141,7 @@ class TestSFZLint(TestCase):
 
 
 class TestSFZList(TestCase):
-    @patch('sys.argv', new=['sfzlist'])
+    @patch('sys.argv', new=['sfzlist', '--no-pickle'])
     def test_valid_file(self):
         print_mock = MagicMock()
         sfzlist(print_mock)
@@ -151,7 +152,7 @@ class TestSFZList(TestCase):
             self.assertIn(test_opcode, opcodes)
 
     @patch('sys.argv', new=[
-        'sfzlist', '--path', str(fixture_dir / 'basic')])
+        'sfzlist', '--no-pickle', '--path', str(fixture_dir / 'basic')])
     def test_path_dir(self):
         print_mock = MagicMock()
         sfzlist(print_mock)
