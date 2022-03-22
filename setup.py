@@ -4,10 +4,16 @@
 from setuptools import setup
 from pathlib import Path
 
-# remove the .pickle cache files
-# I'm lazy to hook into the setup functions
-for pfile in Path(__file__).parent.rglob('*.pickle'):
-    pfile.unlink()
+try:
+    import appdirs
+except Exception:
+    pass  # not installed yet probably
+else:
+    # remove the .pickle cache files
+    # I'm lazy to hook into the setup functions
+    user_cache_dir = Path(appdirs.user_cache_dir("sfzlint", "jisaacstone"))
+    for pfile in user_cache_dir.rglob('*.pickle'):
+        pfile.unlink()
 
 setup(
     name='sfzlint',
