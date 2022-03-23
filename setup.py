@@ -15,10 +15,19 @@ else:
     for pfile in user_cache_dir.rglob('*.pickle'):
         pfile.unlink()
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(
     name='sfzlint',
     version='0.1.4',
     description='parser and linter for sfz files written in python',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    url='https://github.com/jisaacstone/sfzlint',
+    project_urls={
+        "Bug Tracker": "https://github.com/jisaacstone/sfzlint/issues",
+    },
     author='jisaacstone',
     packages=['sfzlint'],
     package_data={'sfzlint': ['*.ebnf','*.yml','*.lark']},
