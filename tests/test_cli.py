@@ -163,3 +163,16 @@ class TestSFZList(TestCase):
             self.assertIn(test_opcode, opcodes)
         for test_opcode in ('cutoff2_onccN', 'curve_index', '*_mod'):
             self.assertNotIn(test_opcode, opcodes)
+
+    @patch('sys.argv', new=[
+        'sfzlist', '--no-pickle', '--path', str(fixture_dir / 'basic/valid.sfz')])
+    def test_path_dir(self):
+        print_mock = MagicMock()
+        sfzlist(print_mock)
+        self.assertTrue(print_mock.called)
+        opcodes = {line[0][0].split(' ', 1)[0]
+                   for line in print_mock.call_args_list}
+        for test_opcode in ('sw_default', 'amp_velcurve_N'):
+            self.assertIn(test_opcode, opcodes)
+        for test_opcode in ('cutoff2_onccN', 'curve_index', '*_mod'):
+            self.assertNotIn(test_opcode, opcodes)

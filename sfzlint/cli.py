@@ -27,9 +27,16 @@ def print_code(code, search=None, filters=None, printer=print):
     printer('\t'.join(data))
 
 
-def print_codes_in_path(path, search, filters, printer=print):
+def print_codes_in_path(path: Path, search, filters, printer=print):
     codes = set()
-    for fp in path.rglob('*.sfz'):
+    if path.is_file():
+        paths = [path]
+    elif path.is_dir():
+        paths = path.rglob('*.sfz')
+    else:
+        raise IOError(f'{path} not found')
+
+    for fp in paths:
         try:
             with fp.open() as fob:
                 contents = fob.read() + '\n'
@@ -47,6 +54,7 @@ def print_codes_in_path(path, search, filters, printer=print):
                     codes.add(str(opcode))
         except Exception as e:
             sys.stderr.write(f'Error checking {fp}: {e}')
+
     op_data = spec.opcodes()
 
     def unknown(code):
@@ -87,7 +95,6 @@ def sfzlist(printer=print):
     args = parser.parse_args()
     if not args.no_pickle:
         settings.pickle = True
-        1/0
     try:
         if args.path:
             print_codes_in_path(args.path, args.search, args.filters, printer)
